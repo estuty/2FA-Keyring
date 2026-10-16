@@ -32,10 +32,14 @@ jobs:
           TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
-            echo "::notice::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not set, so the deploy was skipped."
+          missing=""
+          [ -n "$TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$ACCOUNT" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::warning::Deploy skipped. Repository secret(s) not found:$missing (add them under Settings > Secrets and variables > Actions > Repository secrets)."
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else
+            echo "Both Cloudflare secrets are present."
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
