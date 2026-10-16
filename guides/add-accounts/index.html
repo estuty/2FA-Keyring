@@ -45,7 +45,7 @@
       <p class="kicker"><a href="/guides/">Guides</a></p>
       <h1>Set up two-factor on popular services</h1>
       <p class="lead">How to add Google, GitHub, Microsoft, AWS and Discord accounts to 2FA Keyring, and how authenticator codes differ from push approvals and passkeys.</p>
-      <p class="meta">Menus change over time. Each section links to the service's own instructions.</p>
+      <p class="meta">Checked against each service's official documentation on 16 October 2026. Menus change over time, so each section links to the source.</p>
     </div>
   </div>
   <div class="wrap doc">
@@ -84,24 +84,50 @@
       </ol>
 
       <h2 id="google">Google</h2>
-      <p>In your Google Account, go to Security, then 2-Step Verification, and add an authenticator app. Google shows a QR code and an option for when you can't scan it, which reveals the key. Google may ask you to turn on 2-Step Verification with another method first.</p>
-      <p><a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google's instructions</a></p>
+      <ul>
+        <li>Google's authenticator option works with 2-Step Verification, so turn that on first.</li>
+        <li>In your Google Account's 2-Step Verification settings, choose <b>Set up authenticator</b> (on some devices, <b>Get Started</b>) and follow the steps.</li>
+        <li>Google's help page doesn't describe a text key. If you can't get one, save a picture of the QR code and choose it in 2FA Keyring's <b>Links or QR images</b> tab.</li>
+        <li>Google notes the new option can take up to 7 days to appear at sign-in.</li>
+      </ul>
+      <p class="src">Source: <a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google Account Help: Get verification codes with Google Authenticator</a></p>
 
       <h2 id="github">GitHub</h2>
-      <p>In GitHub's settings, open Password and authentication and enable two-factor authentication with an authenticator app. Under the QR code there's a link to show the setup key as text. GitHub then asks you to save recovery codes. Download them before you finish.</p>
-      <p><a href="https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication" rel="noopener noreferrer">GitHub's instructions</a></p>
+      <ol>
+        <li>Click your profile picture, then <b>Settings</b>. In the <b>Access</b> section of the sidebar, choose <b>Password and authentication</b>.</li>
+        <li>Under <b>Two-factor authentication</b>, click <b>Enable two-factor authentication</b>.</li>
+        <li>Under <b>Scan the QR code</b>, click <b>setup key</b> to show the key as text, and paste it into 2FA Keyring.</li>
+        <li>Enter the code 2FA Keyring shows under <b>Verify the code from the app</b>.</li>
+        <li>Under <b>Save your recovery codes</b>, click <b>Download</b>, then <b>I have saved my recovery codes</b>.</li>
+      </ol>
+      <p>GitHub then runs a 28-day check-up: sign in with a code from 2FA Keyring within that time to confirm everything works. GitHub also recommends adding a security key as a backup.</p>
+      <p class="src">Source: <a href="https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication" rel="noopener noreferrer">GitHub Docs: Configuring two-factor authentication</a></p>
 
       <h2 id="microsoft">Microsoft</h2>
-      <p>For a personal Microsoft account, open the security settings and add a new way to sign in with an app. Microsoft suggests its own Authenticator app; choose the option to set up a different authenticator app to get a QR code and key that work with 2FA Keyring. Microsoft Authenticator's "approve sign-in" notifications are push approvals and can't be used here.</p>
-      <p><a href="https://support.microsoft.com/en-us/account-billing/how-to-use-two-step-verification-with-your-microsoft-account-c7910146-672f-01e9-50a0-93b4585e7eb4" rel="noopener noreferrer">Microsoft's instructions</a></p>
+      <p>For a personal Microsoft account, two-step verification is turned on from <b>Advanced security options</b>, under <b>Additional security</b> → <b>Two-step verification</b>. Microsoft's help page describes its own Microsoft Authenticator app and security codes sent by email or phone. It doesn't describe adding another authenticator app.</p>
+      <ul>
+        <li>If Microsoft offers you a QR code or secret key for "a different authenticator app", 2FA Keyring can use it like any other service.</li>
+        <li>If you're only offered Microsoft Authenticator's sign-in approvals, those are push approvals and can't be used here.</li>
+        <li>Microsoft recommends keeping three pieces of security info on your account. Losing access to your sign-in methods can mean waiting 30 days to get back in.</li>
+      </ul>
+      <p class="src">Source: <a href="https://support.microsoft.com/en-us/account-billing/how-to-use-two-step-verification-with-your-microsoft-account-c7910146-672f-01e9-50a0-93b4585e7eb4" rel="noopener noreferrer">Microsoft Support: How to use two-step verification with your Microsoft account</a></p>
 
       <h2 id="aws">AWS</h2>
-      <p>In the IAM console, open the user (or the root user's security credentials) and assign an MFA device of the authenticator app type. AWS shows a QR code and an option to show the secret key. AWS may ask for two consecutive codes: enter one, wait for 2FA Keyring to show the next, then enter that.</p>
-      <p><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html" rel="noopener noreferrer">AWS's instructions</a></p>
+      <ol>
+        <li>In the IAM console, choose <b>Users</b>, then the user's name, then the <b>Security Credentials</b> tab.</li>
+        <li>Under <b>Multi-factor authentication (MFA)</b>, choose <b>Assign MFA device</b>. Type a device name, choose <b>Authenticator app</b>, then <b>Next</b>.</li>
+        <li>Choose <b>Show secret key</b> and paste it into 2FA Keyring, or choose <b>Show QR code</b> and save a picture of it.</li>
+        <li>Type the current code into <b>MFA code 1</b>. Wait for 2FA Keyring to show the next code (up to 30 seconds), type it into <b>MFA code 2</b>, and choose <b>Add MFA</b> straight away.</li>
+      </ol>
+      <p>Each user, including the root user, can register up to eight MFA devices, and AWS recommends more than one. The root user follows a separate procedure, linked from the same page.</p>
+      <p class="src">Source: <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html" rel="noopener noreferrer">AWS IAM User Guide: Assign a virtual MFA device</a> · <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-virt-mfa-for-root.html" rel="noopener noreferrer">Root user</a></p>
 
       <h2 id="discord">Discord</h2>
-      <p>In Discord's user settings, open My Account and enable an authenticator app. Discord shows a QR code with the key next to it, then asks for a code to confirm. Save the backup codes Discord offers.</p>
-      <p><a href="https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Multi-Factor-Authentication" rel="noopener noreferrer">Discord's instructions</a></p>
+      <ul>
+        <li>Discord supports authenticator apps: you can scan a QR code or enter the secret manually, and the app makes a new code every 30 seconds. Discord's step-by-step enrollment instructions are in its separate article, "Using an Authenticator App on Discord".</li>
+        <li>Save your backup codes after turning it on. To see them later, open the gear icon at the bottom left, go to <b>User Settings</b> → <b>My Account</b>, and select <b>View Backup Codes</b>.</li>
+      </ul>
+      <p class="src">Source: <a href="https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Multi-Factor-Authentication" rel="noopener noreferrer">Discord Support: Setting up Multi-Factor Authentication</a></p>
     </article>
   </div>
 </main>
@@ -110,7 +136,7 @@
   <div class="chrome-wrap">
     <div class="foot-about">
       <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
-      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+      <p class="build">Version <!--BUILD-->1.1.1 · preview build<!--/BUILD--></p>
     </div>
     <nav aria-label="Footer">
       <a href="/app/">App</a>
