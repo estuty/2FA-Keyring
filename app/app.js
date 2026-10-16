@@ -408,7 +408,7 @@
   function renderFoot() {
     var foot = $("#foot");
     foot.replaceChildren();
-    foot.append(h("span", { text: "Codes are calculated on this device. Nothing is sent anywhere." }));
+    foot.append(h("span", { text: "Codes are calculated on this device. Your keys stay here, encrypted." }));
     var b = h("button", { class: "linkbtn", type: "button", text: prefs.lastBackup ? "Last backup " + fmtDate(prefs.lastBackup) : "No backup yet. Make one" });
     b.addEventListener("click", openBackup);
     foot.append(b);
@@ -554,8 +554,8 @@
     li.innerHTML =
       '<div class="entry-head"><span class="entry-no"></span><button class="icon rm" type="button">×</button></div>' +
       '<div class="entry-grid">' +
-        '<div class="field"><label for="' + id("i") + '">Service</label><input id="' + id("i") + '" class="k-issuer" maxlength="80" placeholder="GitHub"></div>' +
-        '<div class="field"><label for="' + id("l") + '">Account</label><input id="' + id("l") + '" class="k-label" maxlength="120" placeholder="you@example.com"></div>' +
+        '<div class="field"><label for="' + id("i") + '">Service</label><input id="' + id("i") + '" class="k-issuer" maxlength="80" placeholder="GitHub" spellcheck="false" autocorrect="off" autocapitalize="off"></div>' +
+        '<div class="field"><label for="' + id("l") + '">Account</label><input id="' + id("l") + '" class="k-label" maxlength="120" placeholder="you@example.com" spellcheck="false" autocorrect="off" autocapitalize="off"></div>' +
       '</div>' +
       '<div class="field"><label for="' + id("s") + '">Setup key</label><input id="' + id("s") + '" class="k-secret mono-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="JBSW Y3DP EHPK 3PXP or an otpauth:// link"></div>' +
       '<p class="prev" hidden></p>' +

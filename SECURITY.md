@@ -40,4 +40,4 @@ The full model is on the website's security page ([security.html](security.html)
 
 - Keys are encrypted with AES-256-GCM under a key derived with PBKDF2-SHA256 (600,000 iterations, 16-byte random salt). Only the encrypted vault is stored, in the browser's `localStorage`.
 - Each page's Content Security Policy forbids network connections (`connect-src 'none'`) and allows scripts, styles and fonts only from the site itself.
-- There's no server-side code, and no third-party scripts, fonts or analytics.
+- There's no server-side code, no cookies, and no third-party scripts, fonts or analytics. The host only sees ordinary requests for the site's files.

@@ -19,7 +19,7 @@ A free, open-source authenticator that runs in your browser. It shows live two-f
 
 - **Encryption:** AES-256-GCM with a key derived by PBKDF2-SHA256 (600,000 iterations, random 16-byte salt), using the browser's Web Crypto API. Only the encrypted vault is stored, in `localStorage`.
 - **Passphrases:** at least 12 characters, and easily guessed ones are rejected.
-- **No network access:** every page sets a strict Content Security Policy. The app's policy includes `connect-src 'none'`, and scripts, styles and fonts load from this site only.
+- **Network connections blocked:** every page sets a strict Content Security Policy. The app's policy includes `connect-src 'none'`, and scripts, styles and fonts load from this site only.
 - **No third parties:** the QR decoder ([jsQR](https://github.com/cozmo/jsQR), Apache-2.0) and fonts (Bricolage Grotesque and JetBrains Mono, SIL OFL 1.1) are stored in `assets/`. There are no CDNs, analytics or cookies.
 - **Defensive checks:** the app refuses to run inside a frame (clickjacking) or outside a secure context (HTTPS or localhost).
 

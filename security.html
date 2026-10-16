@@ -45,6 +45,7 @@
       <a href="#summary">Summary</a>
       <a href="#threats">Threat model</a>
       <a href="#crypto">Cryptography</a>
+      <a href="#host">What the host sees</a>
       <a href="#storage">Storage and memory</a>
       <a href="#csp">Content Security Policy</a>
       <a href="#hosting">Hosting and origin</a>
@@ -58,7 +59,7 @@
     <article class="prose">
       <h2 id="summary">Summary</h2>
       <ul>
-        <li>The app is a static website. There's no server-side code, database, account system, cookies or analytics.</li>
+        <li>The app is a static website. There's no server-side code, database or account system, and the site's code sets no cookies and runs no analytics.</li>
         <li>Your keys are encrypted with <b>AES-256-GCM</b> under a key derived from your passphrase with <b>PBKDF2-SHA256 and 600,000 iterations</b>. Only the encrypted vault is written to storage.</li>
         <li>The encrypted vault lives in your browser's <code>localStorage</code> on your device. It is never uploaded.</li>
         <li>A strict <b>Content Security Policy</b> blocks all network connections from the app and allows scripts, styles and fonts only from this site.</li>
@@ -70,7 +71,7 @@
       <ul>
         <li><b>Theft of the stored vault or a backup file.</b> Without the passphrase it's AES-GCM ciphertext. Guessing is slowed by 600,000 PBKDF2 rounds per attempt, and the app rejects passphrases shorter than 12 characters or ones that are easy to guess.</li>
         <li><b>Tampering with the stored vault or a backup.</b> AES-GCM authenticates the data, so any modified byte makes decryption fail instead of producing altered keys.</li>
-        <li><b>Server breach or data collection.</b> There's no server holding user data, and the app cannot make network requests.</li>
+        <li><b>Breach of the host, or data collection.</b> The host only serves public files and never receives your keys or passphrase, and the app cannot make network requests.</li>
         <li><b>Third-party script compromise.</b> No CDN, tag manager or third-party script is loaded. The QR decoder (jsQR, Apache-2.0) and the fonts (SIL OFL) are served from this site.</li>
         <li><b>Clickjacking.</b> The app refuses to run when it's loaded inside a frame.</li>
         <li><b>Unattended unlocked sessions.</b> The vault auto-locks after inactivity (default 5 minutes) and can lock as soon as you switch tabs. Locking drops the decrypted keys and the encryption key from the page.</li>
@@ -87,6 +88,15 @@
         <b>Two-factor keys are a second factor</b>
         <p>Keeping your TOTP keys in the same place as your passwords reduces the benefit of two-factor authentication. Use 2FA Keyring separately from your password manager where you can.</p>
       </div>
+
+      <h2 id="host">What the host and your browser can see</h2>
+      <p>The app never sends your keys, passphrase, account names or codes anywhere. Some things outside the app's control are worth knowing:</p>
+      <ul>
+        <li><b>The host's request logs.</b> Loading any website tells its host your IP address, browser type, the time and which files were requested. That's GitHub on github.io, or Cloudflare on workers.dev. These requests carry nothing you type or store in the app.</li>
+        <li><b>Browser spell check and translation.</b> Some browsers can send text you type to a cloud service, such as Chrome's enhanced spell check or Edge's Microsoft Editor, or translate a page through an online service. The app turns spell check, autocorrect and translation off for all its fields, so service names, accounts and keys aren't sent this way.</li>
+        <li><b>Password managers.</b> Your browser may offer to save your vault passphrase. If you accept and your browser syncs passwords, the passphrase is protected by that account. Decide whether that's what you want.</li>
+        <li><b>Clipboard history.</b> A copied code can be kept by clipboard history or cloud clipboard sync (for example Windows' <kbd>Win</kbd>+<kbd>V</kbd> history). Codes expire within their period, but turn off clipboard sync if this matters to you.</li>
+      </ul>
 
       <h2 id="crypto">Cryptography</h2>
       <div class="table-wrap">
@@ -116,7 +126,8 @@
 img-src 'self' blob:; connect-src 'none'; base-uri 'none';
 form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</code></pre>
       <ul>
-        <li><code>connect-src 'none'</code> stops <code>fetch</code>, XHR, WebSockets and beacons, so even injected code couldn't send your keys anywhere through them.</li>
+        <li><code>connect-src 'none'</code> stops <code>fetch</code>, XHR, WebSockets and beacons. Images (<code>img-src</code>) and form submissions (<code>form-action</code>) can't reach other sites either.</li>
+        <li>No browser policy can block every route out. A page can still navigate itself to another address, for example. So the policy is a safety net against injected code, and the real protection is that the app's code is small, open and has no third-party parts.</li>
         <li><code>script-src 'self'</code> with no <code>'unsafe-inline'</code> or <code>'unsafe-eval'</code> means only this site's own script files run. There are no inline scripts or styles.</li>
         <li><code>img-src blob:</code> exists only so QR screenshots you choose can be decoded on your device.</li>
         <li>This security page runs no scripts at all (<code>script-src 'none'</code>).</li>
@@ -180,7 +191,7 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. Static site, no cookies, no analytics.</p>
+    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
     <nav aria-label="Footer">
       <a href="app/">App</a>
       <a href="security.html">Security</a>

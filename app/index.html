@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'">
 <meta name="referrer" content="no-referrer">
+<meta name="google" content="notranslate">
 <meta name="color-scheme" content="light dark">
 <title>2FA Keyring Vault</title>
 <meta name="description" content="Your two-factor codes, encrypted on your own device.">
@@ -53,7 +54,7 @@
       <div class="intro">
         <p class="kicker">Your vault</p>
         <h1>Every two-factor code, encrypted in one place.</h1>
-        <p class="lede">Codes are calculated on this device, and your keys are locked with a passphrase only you know. Nothing is sent anywhere.</p>
+        <p class="lede">Codes are calculated on this device, and your keys are stored here, encrypted with a passphrase only you know. The app never sends them anywhere.</p>
         <div class="live" aria-label="Live example code">
           <div>
             <p class="tag">Live example · RFC 6238 test key</p>
@@ -66,7 +67,7 @@
         </div>
         <ul class="assure">
           <li>AES-256-GCM encryption with a key derived from your passphrase</li>
-          <li>No network access, enforced by the browser</li>
+          <li>Network connections blocked by your browser</li>
           <li>Locks automatically when you step away</li>
         </ul>
       </div>
@@ -96,7 +97,7 @@
           <form id="restoreForm" hidden autocomplete="off">
             <div class="field">
               <label for="rText">Backup text</label>
-              <textarea id="rText" class="backup-text" spellcheck="false" placeholder="Paste the backup contents, or choose the file below"></textarea>
+              <textarea id="rText" class="backup-text" spellcheck="false" placeholder="Paste the backup contents, or choose the file below" autocorrect="off" autocapitalize="off"></textarea>
             </div>
             <div class="field">
               <label for="rFile">Backup file</label>
@@ -134,7 +135,7 @@
       </div>
       <div class="vault-search">
         <svg class="search-ic" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m13.2 13.2 3.3 3.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <input id="q" type="search" placeholder="Search services or accounts" aria-label="Search keys" autocomplete="off">
+        <input id="q" type="search" placeholder="Search services or accounts" aria-label="Search keys" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
       </div>
       <p class="note storageNote vault-note" hidden>This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup now.</p>
       <ul id="list" class="list"></ul>
@@ -155,7 +156,7 @@
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. Static site, no cookies, no analytics.</p>
+    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
     <nav aria-label="Footer">
       <a href="../">Home</a>
       <a href="../security.html">Security</a>
@@ -179,7 +180,7 @@
       <div class="btns"><button class="btn primary" id="keySubmit" type="submit">Save key</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
     </form>
     <form id="linkForm" role="tabpanel" aria-labelledby="tabLink" hidden autocomplete="off">
-      <div class="field"><label for="lLinks">otpauth:// links, one per line</label><textarea id="lLinks" rows="4" class="mono-in" spellcheck="false" placeholder="otpauth://totp/GitHub:you@example.com?secret=...&amp;issuer=GitHub"></textarea></div>
+      <div class="field"><label for="lLinks">otpauth:// links, one per line</label><textarea id="lLinks" rows="4" class="mono-in" spellcheck="false" placeholder="otpauth://totp/GitHub:you@example.com?secret=...&amp;issuer=GitHub" autocorrect="off" autocapitalize="off"></textarea></div>
       <div class="field"><label for="lFile">Or choose QR code screenshots (you can pick several)</label><input id="lFile" type="file" accept="image/*" multiple></div>
       <p class="err" id="linkErr" role="alert"></p>
       <div class="btns"><button class="btn primary" type="submit">Add</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
@@ -191,8 +192,8 @@
   <div class="dlg">
     <div class="dlg-head"><h2 id="editTitle">Edit key</h2><button class="icon" type="button" aria-label="Close" data-close="editDlg">×</button></div>
     <form id="editForm" autocomplete="off">
-      <div class="field"><label for="eIssuer">Service</label><input id="eIssuer" maxlength="80"></div>
-      <div class="field"><label for="eLabel">Account</label><input id="eLabel" maxlength="120"></div>
+      <div class="field"><label for="eIssuer">Service</label><input id="eIssuer" maxlength="80" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
+      <div class="field"><label for="eLabel">Account</label><input id="eLabel" maxlength="120" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
       <p class="small muted" id="eSpec"></p>
       <div>
         <button class="linkbtn" id="eReveal" type="button">Show setup key</button>
@@ -237,7 +238,7 @@
     <section>
       <h3>Erase vault</h3>
       <p class="small muted">Deletes every key stored in this browser. Make a backup first if you may need them.</p>
-      <div class="field"><label for="sErase">Type ERASE to confirm</label><input id="sErase" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="sErase">Type ERASE to confirm</label><input id="sErase" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
       <div class="btns"><button class="btn danger" id="sEraseBtn" type="button" disabled>Erase vault</button></div>
     </section>
   </div>
@@ -249,7 +250,7 @@
     <section>
       <h3>Export an encrypted backup</h3>
       <p class="small muted">The backup stays encrypted with your passphrase. Without that passphrase it cannot be opened. <span id="bLast"></span></p>
-      <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text"></textarea>
+      <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text" autocorrect="off" autocapitalize="off"></textarea>
       <div class="btns">
         <button class="btn primary" id="bSave" type="button">Save file</button>
         <button class="btn" id="bCopy" type="button">Copy text</button>
@@ -260,7 +261,7 @@
       <h3>Import and merge a backup</h3>
       <form id="importForm" autocomplete="off">
         <div class="field"><label for="iFile">Backup file</label><input id="iFile" type="file" accept=".json,application/json,text/plain"></div>
-        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text" spellcheck="false"></textarea></div>
+        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea></div>
         <div class="field"><label for="iPass">Backup passphrase</label><input id="iPass" type="password" autocomplete="off"></div>
         <p class="err" id="iErr" role="alert"></p>
         <p class="ok" id="iOk" role="status"></p>

@@ -7,9 +7,9 @@
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <title>2FA Keyring</title>
-<meta name="description" content="A free, open-source authenticator that runs in your browser. Your two-factor keys are encrypted on your own device with a passphrase only you know. No account, no server, no tracking.">
+<meta name="description" content="A free, open-source authenticator that runs in your browser. Your two-factor keys are encrypted on your own device with a passphrase only you know. No account, no cookies, no tracking.">
 <meta property="og:title" content="2FA Keyring">
-<meta property="og:description" content="Your two-factor codes, encrypted on your own device. No account, no server, no tracking.">
+<meta property="og:description" content="Your two-factor codes, encrypted on your own device. No account, no cookies, no tracking.">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/fonts.css">
@@ -39,7 +39,7 @@
     <div class="wrap">
       <div class="hero-copy">
         <h1>Your <span class="nowrap">two-factor</span> codes, <em>encrypted on your own device.</em></h1>
-        <p class="lead">2FA Keyring is a free, open-source authenticator that runs entirely in your browser. There's no account and no server. Your keys are locked with a passphrase that only you know.</p>
+        <p class="lead">2FA Keyring is a free, open-source authenticator that runs entirely in your browser. There's no account to create, and your keys never go to a server. They stay on your device, locked with a passphrase that only you know.</p>
         <div class="btns">
           <a class="btn primary" href="app/">Open the app</a>
           <a class="btn" href="security.html">Read the security model</a>
@@ -47,7 +47,7 @@
         <ul class="facts" aria-label="Security facts">
           <li class="fact">AES-256-GCM</li>
           <li class="fact">PBKDF2 · 600,000 rounds</li>
-          <li class="fact">No network access</li>
+          <li class="fact">Network calls blocked</li>
           <li class="fact">No cookies or analytics</li>
         </ul>
         <p class="works">Works with any service that offers "authenticator app" codes, such as GitHub, Google, Microsoft, AWS, Discord and Dropbox.</p>
@@ -87,7 +87,7 @@
     <div class="wrap">
       <div class="sec-head">
         <p class="kicker">What happens to your keys</p>
-        <h2 class="h2" id="model-h">Encrypted before they're stored. Never sent anywhere.</h2>
+        <h2 class="h2" id="model-h">Encrypted before they're stored. Never sent by the app.</h2>
         <p class="lead">Every key you add goes through the same path, inside your browser, before anything is written to disk.</p>
       </div>
       <ol class="flow">
@@ -99,8 +99,8 @@
       <div class="nonet" role="note">
         <span class="x" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2.5 4 5.5v6c0 4.9 3.4 8.9 8 10 4.6-1.1 8-5.1 8-10v-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <div>
-          <b>No network access, enforced by your browser</b>
-          <p>The app's Content Security Policy sets <code>connect-src 'none'</code>, so your browser refuses any attempt by the page to send data anywhere, even if someone slipped bad code into it. All code and fonts come from this site, with no CDNs, trackers or third-party scripts.</p>
+          <b>Network connections blocked by your browser</b>
+          <p>The app's Content Security Policy sets <code>connect-src 'none'</code>, so your browser blocks the page from opening network connections of any kind (fetch, XHR, WebSockets and beacons). All code and fonts come from this site, with no CDNs, trackers or third-party scripts. This is a strong safety net, not a substitute for trustworthy code, which is why the code is open for anyone to read.</p>
         </div>
       </div>
       <div class="policy">
@@ -124,8 +124,8 @@
           <h3><span class="dot" aria-hidden="true"></span>Protected</h3>
           <ul>
             <li><b>A stolen backup file or browser profile</b><span>Without your passphrase, the vault is unreadable ciphertext.</span></li>
-            <li><b>Our servers being hacked</b><span>There are no servers. Nothing about you or your keys is stored anywhere but your device.</span></li>
-            <li><b>Tracking and data collection</b><span>No accounts, cookies, analytics or network requests from the app.</span></li>
+            <li><b>A breach of the website's host</b><span>The host only stores the public site files. Your keys and passphrase never reach it.</span></li>
+            <li><b>Tracking and data collection</b><span>No accounts, cookies or analytics, and no network requests from the app once it has loaded.</span></li>
             <li><b>Someone walking up to your screen later</b><span>Auto-lock clears the decrypted keys from memory after inactivity, or as soon as you switch tabs.</span></li>
             <li><b>Being loaded inside another site</b><span>The app refuses to run inside a frame, so it can't be overlaid to trick your clicks.</span></li>
           </ul>
@@ -137,6 +137,7 @@
             <li><b>Malware or a malicious browser extension</b><span>Software on your device can read the page while it's unlocked, as with any password manager.</span></li>
             <li><b>A forgotten passphrase</b><span>There's no reset and no back door. Keep your services' recovery codes somewhere safe.</span></li>
             <li><b>Clearing your browser data</b><span>That deletes the vault. Export an encrypted backup after adding keys.</span></li>
+            <li><b>What the host can see</b><span>Like any website, the host (GitHub or Cloudflare) sees that your IP address requested the site's files. It never sees anything you type.</span></li>
           </ul>
         </div>
       </div>
@@ -183,7 +184,7 @@
       <div class="faq">
         <details>
           <summary>Can anyone else see my keys, including the people who run this site?</summary>
-          <div class="ans"><p>No. Your keys are encrypted in your browser and saved only on your device. This site has no backend to send them to, and the app's security policy blocks network connections. The site is just static files.</p></div>
+          <div class="ans"><p>No. Your keys are encrypted in your browser and saved only on your device. The site is just static files with no backend to receive them, and the app's security policy blocks network connections.</p><p>As with any website, the company hosting the files can see that your IP address loaded them, but nothing you type or store is ever sent.</p></div>
         </details>
         <details>
           <summary>What happens if I forget my passphrase?</summary>
@@ -226,7 +227,7 @@
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. Static site, no cookies, no analytics.</p>
+    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
     <nav aria-label="Footer">
       <a href="app/">App</a>
       <a href="security.html">Security</a>
