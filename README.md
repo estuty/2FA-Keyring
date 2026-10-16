@@ -41,6 +41,7 @@ assets/vendor/      jsQR 1.4.0 and its license
 _headers            Security headers for Cloudflare hosting
 wrangler.jsonc      Cloudflare Workers static-assets config
 .assetsignore       Repository files that aren't deployed to Cloudflare
+.github/workflows/  Automatic, verified deploy to Cloudflare
 ```
 
 ## Publishing
@@ -49,12 +50,16 @@ The site is plain static files, so it can be hosted in two ways. Cloudflare is r
 
 ### Cloudflare Workers (recommended): `https://2fa-keyring.estuty777.workers.dev`
 
-`wrangler.jsonc` and `_headers` are already in the repository.
+`wrangler.jsonc`, `_headers` and a GitHub Actions workflow (`.github/workflows/deploy-cloudflare.yml`) are already in the repository. To turn on automatic deploys:
 
-1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Import a repository**.
-2. Connect GitHub and choose `estuty/2FA-Keyring`.
-3. Leave the build command empty, keep the deploy command `npx wrangler deploy`, and make sure the project name is `2fa-keyring`.
-4. Deploy. Every later push to `main` redeploys automatically.
+1. **Create an API token.** In Cloudflare, go to **My Profile → API Tokens → Create Token**, choose the **Edit Cloudflare Workers** template, limit it to your account, and create it.
+2. **Find your account ID.** It's shown on the **Workers & Pages** overview page.
+3. **Add both as secrets.** In GitHub, go to **Settings → Secrets and variables → Actions → New repository secret**. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+4. **Run the workflow.** Go to **Actions → Deploy to Cloudflare → Run workflow**, or push to `main`.
+
+Each run deploys the site, then checks the live site: the security headers are present, repository files like the README return 404, and every page loads. If any check fails, the run fails. Until the secrets exist, the workflow skips the deploy instead of failing.
+
+If you also connected the repository through Cloudflare's own **Workers Builds**, disconnect it (Worker → Settings → Build), so there's only one way the site gets deployed.
 
 Cloudflare then sends the headers in `_headers` with every file:
 
