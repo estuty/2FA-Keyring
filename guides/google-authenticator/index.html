@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Move from Google Authenticator | 2FA Keyring</title>
+<meta name="description" content="Import all your Google Authenticator accounts into 2FA Keyring from its export QR codes, decoded locally, with a review step and duplicate detection.">
+<link rel="canonical" href="https://2fa-keyring.com/guides/google-authenticator/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Move from Google Authenticator | 2FA Keyring">
+<meta property="og:description" content="Import all your Google Authenticator accounts into 2FA Keyring from its export QR codes, decoded locally, with a review step and duplicate detection.">
+<meta property="og:url" content="https://2fa-keyring.com/guides/google-authenticator/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/guides/" aria-current="page">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker"><a href="/guides/">Guides</a></p>
+      <h1>Move from Google Authenticator</h1>
+      <p class="lead">Import all your Google Authenticator accounts into 2FA Keyring at once using its export QR codes. The codes are decoded on your device and never uploaded.</p>
+      <p class="meta">About 10 minutes · You'll need your phone and a way to get pictures of its screen</p>
+    </div>
+  </div>
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#how">How it works</a>
+      <a href="#export">1. Export from Google Authenticator</a>
+      <a href="#pictures">2. Get pictures of the codes</a>
+      <a href="#import">3. Import and review</a>
+      <a href="#check">4. Check before removing</a>
+      <a href="#problems">If something goes wrong</a>
+    </nav>
+    <article class="prose">
+      <h2 id="how">How it works</h2>
+      <p>Google Authenticator can export your accounts as one or more QR codes. Each code contains the accounts' setup keys in a format starting with <code>otpauth-migration://</code>. 2FA Keyring reads that format directly, shows you every account it found, and saves nothing until you confirm.</p>
+      <div class="callout warn">
+        <b>Treat export codes like passwords</b>
+        <p>Anyone who sees an export QR code can copy every account in it. Take pictures privately, don't send them through chat or email, and delete them once you're done.</p>
+      </div>
+
+      <h2 id="export">1. Export from Google Authenticator</h2>
+      <ol>
+        <li>On your phone, open Google Authenticator.</li>
+        <li>Open the menu and choose <b>Transfer accounts</b>, then <b>Export accounts</b>. You may be asked to confirm it's you.</li>
+        <li>Select the accounts to move and continue. The app shows one QR code, or several if you have many accounts (for example "1 of 3").</li>
+      </ol>
+      <p>Menu names can differ between app versions. If yours looks different, follow <a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google's own instructions</a>.</p>
+
+      <h2 id="pictures">2. Get pictures of the codes</h2>
+      <p>2FA Keyring reads QR codes from images, so you need a picture of each export code:</p>
+      <ul>
+        <li><b>Using 2FA Keyring on a computer:</b> take a photo of the phone screen with another phone or camera, then move the photos to the computer privately (for example with a cable).</li>
+        <li><b>Using 2FA Keyring on a second phone:</b> in the import screen, the picture button usually lets you take a photo directly.</li>
+        <li><b>Screenshots:</b> some phones don't allow screenshots of the export screen. If a screenshot comes out blank, take a photo instead.</li>
+      </ul>
+      <p>For a multi-code export, get a picture of every code. Keep the pictures sharp and close: the code should fill most of the frame.</p>
+
+      <h2 id="import">3. Import and review</h2>
+      <ol>
+        <li>Open your vault and choose <b>Add key</b>, then the <b>Google Authenticator</b> tab.</li>
+        <li>Choose all the pictures at once. If you have the export as text instead, open <b>Paste an export link instead</b>.</li>
+        <li>Review the list. Each account is marked:
+          <ul>
+            <li><b>Ready</b>: it will be imported.</li>
+            <li><b>Already in your vault</b>: skipped, so nothing is added twice.</li>
+            <li><b>Appears twice in this export</b>: only one copy is imported.</li>
+            <li><b>Not supported</b>: counter-based (HOTP) and MD5 codes aren't supported. They're listed but never imported or converted.</li>
+          </ul>
+        </li>
+        <li>If the app says some export codes haven't been read, choose <b>Scan more codes</b> and add the missing pictures. You can also import what you have now and add the rest later.</li>
+        <li>Untick anything you don't want, then choose <b>Import</b>.</li>
+      </ol>
+      <p>If you'd like to practise first, the same import works in the <a href="/app/#demo">demo</a>, where nothing is saved.</p>
+
+      <h2 id="check">4. Check before removing anything</h2>
+      <ol>
+        <li>For each imported account, compare the code in 2FA Keyring with the code in Google Authenticator. They should match at the same moment.</li>
+        <li>Better still, sign in to each service once using a code from 2FA Keyring.</li>
+        <li>Make a backup of your vault and check that it opens. See the <a href="/guides/backup-and-restore/">backup guide</a>.</li>
+        <li>Only then remove the accounts from Google Authenticator, if you want to. Delete the export pictures.</li>
+      </ol>
+
+      <h2 id="problems">If something goes wrong</h2>
+      <ul>
+        <li><b>"No QR code found":</b> retake the picture closer, in good light, with the whole code in frame and no glare.</li>
+        <li><b>"Incomplete or damaged":</b> the picture was read but the data was cut off. Export again and retake the picture.</li>
+        <li><b>"Isn't a Google Authenticator export":</b> that QR code is for a single account. Use the <b>Links or QR images</b> tab instead.</li>
+        <li><b>Codes don't match:</b> make sure your device's clock is set automatically, then compare again.</li>
+      </ul>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

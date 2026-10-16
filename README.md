@@ -2,18 +2,19 @@
 
 A free, open-source authenticator that runs in your browser. It shows live two-factor (TOTP) codes for all your accounts and keeps every key encrypted on your own device, behind a passphrase only you know. There's no account and no tracking, and your keys never leave your device.
 
-- **Live site:** <https://2fa-keyring.com>
-- **Website:** `index.html`
-- **App:** `app/`
-- **Security model:** [`security.html`](security.html) · **Reporting:** [`SECURITY.md`](SECURITY.md)
+- **Live site:** <https://2fa-keyring.com> · **Try the demo:** <https://2fa-keyring.com/app/#demo>
+- **Guides:** <https://2fa-keyring.com/guides/>
+- **Security model:** <https://2fa-keyring.com/security/> · **Reporting:** [`SECURITY.md`](SECURITY.md) · **Changes:** [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Features
 
+- **Demo mode:** explore a sample vault of public test keys without a passphrase. It's kept in memory and never touches a saved vault.
+- **Import from Google Authenticator:** read its export QR codes (including multi-part exports) on the device, review every account, then confirm.
 - **Add several keys at once:** type setup keys (pasting an `otpauth://` link into a setup-key field fills in the rest), paste a list of `otpauth://` links, or pick several QR code screenshots. QR codes are decoded on your device.
 - **Live codes:** click a code to copy it. The next code appears a few seconds before the current one expires.
 - **Supported formats:** SHA-1, SHA-256 and SHA-512, with 6, 7 or 8 digits and any period from 1 to 300 seconds.
-- **Manage keys:** search, rename, reveal a key's setup key, or delete it.
-- **Encrypted backups:** export to a file or as text, restore on another device, or merge into an existing vault.
+- **Manage keys:** search (press `/`), favorites, groups, rename, reveal a key's setup key, or delete it.
+- **Encrypted backups:** download or copy, check a backup without changing anything, restore on another device, or merge into an existing vault. The app counts changes since your last backup and reminds you.
 - **Auto-lock:** after 1, 5 or 15 minutes of inactivity, and optionally as soon as you switch tabs.
 
 ## Security at a glance
@@ -21,29 +22,33 @@ A free, open-source authenticator that runs in your browser. It shows live two-f
 - **Encryption:** AES-256-GCM with a key derived by PBKDF2-SHA256 (600,000 iterations, random 16-byte salt), using the browser's Web Crypto API. Only the encrypted vault is stored, in `localStorage`.
 - **Passphrases:** at least 12 characters, and easily guessed ones are rejected.
 - **Network connections blocked:** every page sets a strict Content Security Policy. The app's policy includes `connect-src 'none'`, and scripts, styles and fonts load from this site only.
-- **No third parties:** the QR decoder ([jsQR](https://github.com/cozmo/jsQR), Apache-2.0) and fonts (Bricolage Grotesque and JetBrains Mono, SIL OFL 1.1) are stored in `assets/`. There are no CDNs, analytics or cookies.
+- **No third-party services:** the one bundled library, the QR decoder [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0), and the fonts (Bricolage Grotesque and JetBrains Mono, SIL OFL 1.1) are stored in `assets/` and served from the site. There are no CDNs, analytics or cookies.
 - **Defensive checks:** the app refuses to run inside a frame (clickjacking) or outside a secure context (HTTPS or localhost).
 
-The [security page](security.html) covers the full threat model, its limits, and how to verify each claim yourself.
+The [security page](https://2fa-keyring.com/security/) covers the full threat model, its limits, and how to verify each claim yourself.
 
 ## Project layout
 
 ```
-index.html          Website landing page
-security.html       Security model
-privacy.html        Privacy Policy
-terms.html          Terms of Use
-app/                The app (index.html, app.js, app.css)
-assets/totp.js      TOTP core shared by the app and the website's live example
-assets/site.css     Website styles
-assets/site.js      Website live example codes
-assets/fonts/       Self-hosted fonts and their licenses
-assets/vendor/      jsQR 1.4.0 and its license
-_headers            Security headers for Cloudflare hosting
-wrangler.jsonc      Cloudflare Workers static-assets config
-.assetsignore       Repository files that aren't deployed to Cloudflare
-.github/workflows/  Automatic, verified deploy to Cloudflare
-.well-known/        security.txt (RFC 9116)
+index.html               Home page
+app/                     The app (index.html, app.js, app.css)
+guides/                  Guides (each in its own folder)
+security/ privacy/ terms/  Security model, Privacy Policy, Terms of Use
+404.html                 Not-found page
+assets/totp.js           TOTP core shared by the app and the home page
+assets/migration.js      Google Authenticator export decoder
+assets/site.css, site.js Website styles and the home page's sample vault
+assets/chrome.css        Shared header and footer
+assets/og.png            Social preview image
+assets/fonts/, vendor/   Self-hosted fonts and jsQR, with their licenses
+tests/run.js             Unit tests (node tests/run.js)
+_headers, _redirects     Security headers and old-URL redirects for Cloudflare
+sitemap.xml, robots.txt  Search engine files
+.well-known/             security.txt (RFC 9116)
+wrangler.jsonc           Cloudflare Workers static-assets config
+.assetsignore            Repository files that aren't deployed
+.github/workflows/       Tests on every PR; verified deploy from main
+VERSION, CHANGELOG.md    Release version and history
 ```
 
 ## Publishing
@@ -86,14 +91,16 @@ Turn it on under Settings → Code security, so the "Report a vulnerability" lin
 ## Running locally
 
 ```
-python3 -m http.server 8000
+npx wrangler dev
 ```
 
-Then open <http://localhost:8000/>. The app needs HTTPS or `localhost`, because the browser's Web Crypto API only works in a secure context.
+Then open <http://localhost:8787/>. This serves the site the way Cloudflare does, with the security headers, redirects and folder URLs. `python3 -m http.server 8000` also works for a quick look, without the headers and redirects. The app needs HTTPS or `localhost`, because the browser's Web Crypto API only works in a secure context.
+
+Run the tests with `node tests/run.js`.
 
 ## Verification
 
-`assets/totp.js` matches all 18 RFC 6238 test vectors (SHA-1, SHA-256 and SHA-512 at six timestamps). The website's live example uses the RFC's public test keys.
+`tests/run.js` checks `assets/totp.js` against all 18 RFC 6238 test vectors (SHA-1, SHA-256 and SHA-512 at six timestamps) and the Google Authenticator import against synthetic single, multi-part, duplicate, unsupported and malformed exports. The demo and the home page use public or synthetic test keys only.
 
 ## License
 

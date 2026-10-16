@@ -6,26 +6,35 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
-<link rel="canonical" href="https://2fa-keyring.com/security">
-<title>2FA Keyring Security</title>
-<meta name="description" content="How 2FA Keyring protects your two-factor keys: threat model, cryptography, Content Security Policy, hosting, and how to verify it yourself.">
-<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/chrome.css">
+<title>Security Model: How 2FA Keyring Protects Your Keys</title>
+<meta name="description" content="How 2FA Keyring protects your two-factor keys: local AES-256-GCM encryption, threat model and limits, Content Security Policy, hosting, and how to verify it yourself.">
+<link rel="canonical" href="https://2fa-keyring.com/security/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Security Model: How 2FA Keyring Protects Your Keys">
+<meta property="og:description" content="How 2FA Keyring protects your two-factor keys: local AES-256-GCM encryption, threat model and limits, Content Security Policy, hosting, and how to verify it yourself.">
+<meta property="og:url" content="https://2fa-keyring.com/security/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-
 <header class="site-head">
   <div class="chrome-wrap">
-    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
     <nav class="nav" aria-label="Main">
-      <a class="hide-sm" href="./#how">How it works</a>
-      <a href="security.html" aria-current="page">Security</a>
-      <a class="hide-sm" href="./#faq">FAQ</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/" aria-current="page">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
       <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
-      <a class="nav-cta" href="app/">Open the app</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
     </nav>
   </div>
 </header>
@@ -73,16 +82,16 @@
         <li><b>Theft of the stored vault or a backup file.</b> Without the passphrase it's AES-GCM ciphertext. Guessing is slowed by 600,000 PBKDF2 rounds per attempt, and the app rejects passphrases shorter than 12 characters or ones that are easy to guess.</li>
         <li><b>Tampering with the stored vault or a backup.</b> AES-GCM authenticates the data, so any modified byte makes decryption fail instead of producing altered keys.</li>
         <li><b>Breach of the host, or data collection.</b> The host only serves public files and never receives your keys or passphrase, and the app cannot make network requests.</li>
-        <li><b>Third-party script compromise.</b> No CDN, tag manager or third-party script is loaded. The QR decoder (jsQR, Apache-2.0) and the fonts (SIL OFL) are served from this site.</li>
+        <li><b>Compromised third-party services.</b> No CDN, tag manager or analytics service is used. The one bundled third-party library, jsQR (Apache-2.0, for reading QR codes), and the fonts (SIL OFL) are copied into the repository and served from this site, so they change only when the repository does.</li>
         <li><b>Clickjacking.</b> The app refuses to run when it's loaded inside a frame.</li>
-        <li><b>Unattended unlocked sessions.</b> The vault auto-locks after inactivity (default 5 minutes) and can lock as soon as you switch tabs. Locking drops the decrypted keys and the encryption key from the page.</li>
+        <li><b>Unattended unlocked sessions.</b> The vault locks after 5 minutes without activity by default (1, 5 or 15 minutes, or never), and can also lock as soon as you switch tabs. Locking drops the decrypted keys and the encryption key from the page.</li>
         <li><b>Insecure connections.</b> The app refuses to run outside a secure context (HTTPS or localhost).</li>
       </ul>
       <h3>Not defended</h3>
       <ul>
         <li><b>A compromised device.</b> Malware, a malicious browser extension or someone with control of your unlocked session can read what the page shows. This applies to every software authenticator.</li>
         <li><b>A weak or reused passphrase.</b> If an attacker has your encrypted vault and can guess your passphrase, they get your keys.</li>
-        <li><b>Malicious changes to the code itself.</b> If whoever controls this site or its repository published altered code, the next visit would run it. Run your own copy if you don't want to rely on that (see <a href="#selfhost">below</a>).</li>
+        <li><b>A compromised deployment.</b> The host never stores your vault, but it does serve the code your browser runs. If the repository, the deploy pipeline or the hosting account were compromised, the next visit would run the altered code. The Content Security Policy makes quietly sending data harder, but it can't make tampered code harmless. Check the address is <code>2fa-keyring.com</code>, and consider <a href="/guides/self-hosting/">running your own copy</a> if you don't want to rely on this deployment.</li>
         <li><b>Phishing of the codes themselves.</b> A one-time code typed into a fake login page can be relayed by an attacker within its 30-second window. For your most important accounts, prefer hardware security keys or passkeys, which resist phishing.</li>
       </ul>
       <div class="callout warn">
@@ -100,7 +109,7 @@
       </ul>
 
       <h2 id="crypto">Cryptography</h2>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table">
         <table>
           <thead><tr><th>Purpose</th><th>Algorithm</th><th>Parameters</th></tr></thead>
           <tbody>
@@ -115,7 +124,9 @@
 
       <h2 id="storage">Storage and memory</h2>
       <ul>
-        <li><b>On disk:</b> one <code>localStorage</code> entry holds the encrypted vault: format version, salt, iteration count, IV and ciphertext. A second entry holds non-secret preferences (auto-lock time, last backup date).</li>
+        <li><b>On disk:</b> one <code>localStorage</code> entry holds the encrypted vault: format version, salt, iteration count, IV and ciphertext. A second entry holds non-secret preferences: auto-lock time, the lock-on-tab-switch option, the date of your last backup and how many changes you've made since.</li>
+        <li><b>The demo:</b> the demo vault exists only in the page's memory. It never reads or writes the stored vault or preferences.</li>
+        <li><b>Imports:</b> QR images and Google Authenticator exports are decoded inside the page. Images aren't uploaded or kept.</li>
         <li><b>In memory while unlocked:</b> the decrypted key list and the non-extractable AES key. Both are dropped when the vault locks.</li>
         <li><b>Never stored:</b> your passphrase, or any key in plain text.</li>
         <li><b>Clipboard:</b> copying puts only the current 6–8 digit code on the clipboard, which expires within its period. The setup key is only shown on screen when you ask for it.</li>
@@ -123,7 +134,7 @@
 
       <h2 id="csp">Content Security Policy</h2>
       <p>Each page declares its policy in a <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> tag, which the browser enforces. The app's policy is:</p>
-<pre class="code"><code>default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self';
+<pre class="code" tabindex="0" aria-label="Code"><code>default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self';
 img-src 'self' blob:; connect-src 'none'; base-uri 'none';
 form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</code></pre>
       <ul>
@@ -164,7 +175,7 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
         <li>Open the app, then your browser's developer tools (F12, or ⌥⌘I on a Mac), and go to the <b>Network</b> tab. Reload, create a vault, add a key and copy a code. Every request goes to this site, and nothing is sent after the page has loaded.</li>
         <li>In the <b>Console</b>, run <code>fetch("https://example.com")</code>. The browser blocks it and reports a Content Security Policy violation.</li>
         <li>In <b>Application → Local Storage</b>, open <code>keyring.vault.v1</code>. You'll see only the encrypted vault (version, salt, IV and ciphertext), never your setup keys.</li>
-        <li>Compare the files served by this site with the repository on GitHub. The app consists of <code>app/index.html</code>, <code>app/app.js</code>, <code>app/app.css</code>, <code>assets/totp.js</code> and <code>assets/vendor/jsQR.js</code>.</li>
+        <li>Compare the files served by this site with the repository on GitHub. The app consists of <code>/app/</code> (its page, <code>app.js</code> and <code>app.css</code>), <code>/assets/totp.js</code>, <code>/assets/migration.js</code> and <code>/assets/vendor/jsQR.js</code>.</li>
       </ol>
 
       <h2 id="selfhost">Run your own copy</h2>
@@ -193,13 +204,17 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
     <nav aria-label="Footer">
-      <a href="app/">App</a>
-      <a href="security.html">Security</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a href="security.html#report">Report a vulnerability</a>
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
       <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
     </nav>
   </div>

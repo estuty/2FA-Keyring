@@ -85,3 +85,18 @@ function parseOtpauth(uri) {
     period: q.get("period") || 30
   };
 }
+
+function base32Encode(bytes) {
+  let bits = 0, val = 0, out = "";
+  for (const b of bytes) {
+    val = (val << 8) | b;
+    bits += 8;
+    while (bits >= 5) {
+      out += B32[(val >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+    val &= (1 << bits) - 1;
+  }
+  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
+  return out;
+}

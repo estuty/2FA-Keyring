@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Set Up 2FA on Google, GitHub, Microsoft, AWS and Discord | 2FA Keyring</title>
+<meta name="description" content="Add Google, GitHub, Microsoft, AWS and Discord accounts to a local 2FA authenticator, and how TOTP codes differ from push approvals and passkeys.">
+<link rel="canonical" href="https://2fa-keyring.com/guides/add-accounts/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Set Up 2FA on Google, GitHub, Microsoft, AWS and Discord | 2FA Keyring">
+<meta property="og:description" content="Add Google, GitHub, Microsoft, AWS and Discord accounts to a local 2FA authenticator, and how TOTP codes differ from push approvals and passkeys.">
+<meta property="og:url" content="https://2fa-keyring.com/guides/add-accounts/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/guides/" aria-current="page">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker"><a href="/guides/">Guides</a></p>
+      <h1>Set up two-factor on popular services</h1>
+      <p class="lead">How to add Google, GitHub, Microsoft, AWS and Discord accounts to 2FA Keyring, and how authenticator codes differ from push approvals and passkeys.</p>
+      <p class="meta">Menus change over time. Each section links to the service's own instructions.</p>
+    </div>
+  </div>
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#kinds">Codes, push and passkeys</a>
+      <a href="#pattern">The general pattern</a>
+      <a href="#google">Google</a>
+      <a href="#github">GitHub</a>
+      <a href="#microsoft">Microsoft</a>
+      <a href="#aws">AWS</a>
+      <a href="#discord">Discord</a>
+    </nav>
+    <article class="prose">
+      <h2 id="kinds">Codes, push approvals and passkeys</h2>
+      <p>Services offer several kinds of second step. 2FA Keyring handles only the first:</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table">
+        <table>
+          <thead><tr><th>Method</th><th>What you do</th><th>Works with 2FA Keyring?</th></tr></thead>
+          <tbody>
+            <tr><td>Authenticator app codes (TOTP)</td><td>Type a 6 to 8 digit code that changes every 30 seconds or so</td><td>Yes</td></tr>
+            <tr><td>Push approval</td><td>Tap "Approve" or match a number in the company's own app</td><td>No, it needs that company's app</td></tr>
+            <tr><td>Passkeys and security keys</td><td>Confirm with your fingerprint, face, PIN or a USB/NFC key</td><td>No, these are stored by your device, password manager or key</td></tr>
+            <tr><td>Text message or email codes</td><td>Type a code sent to you</td><td>No, these arrive by message</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Passkeys and security keys resist phishing better than any code. Where a service offers them, they're a good choice alongside or instead of codes.</p>
+
+      <h2 id="pattern">The general pattern</h2>
+      <ol>
+        <li>In the service's security settings, choose two-factor or two-step verification, then the <b>authenticator app</b> option. If you're offered the company's own app, look for an option to use a different authenticator app.</li>
+        <li>When the QR code appears, look for a link to show the key as text, often called "can't scan it?", "setup key" or "show secret key". Copy it into 2FA Keyring's Setup key field. You can also save a picture of the QR code and choose it in the <b>Links or QR images</b> tab.</li>
+        <li>Enter the code 2FA Keyring shows back into the service to confirm.</li>
+        <li>Save the recovery codes the service offers, then make a fresh backup of your vault.</li>
+      </ol>
+
+      <h2 id="google">Google</h2>
+      <p>In your Google Account, go to Security, then 2-Step Verification, and add an authenticator app. Google shows a QR code and an option for when you can't scan it, which reveals the key. Google may ask you to turn on 2-Step Verification with another method first.</p>
+      <p><a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google's instructions</a></p>
+
+      <h2 id="github">GitHub</h2>
+      <p>In GitHub's settings, open Password and authentication and enable two-factor authentication with an authenticator app. Under the QR code there's a link to show the setup key as text. GitHub then asks you to save recovery codes. Download them before you finish.</p>
+      <p><a href="https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication" rel="noopener noreferrer">GitHub's instructions</a></p>
+
+      <h2 id="microsoft">Microsoft</h2>
+      <p>For a personal Microsoft account, open the security settings and add a new way to sign in with an app. Microsoft suggests its own Authenticator app; choose the option to set up a different authenticator app to get a QR code and key that work with 2FA Keyring. Microsoft Authenticator's "approve sign-in" notifications are push approvals and can't be used here.</p>
+      <p><a href="https://support.microsoft.com/en-us/account-billing/how-to-use-two-step-verification-with-your-microsoft-account-c7910146-672f-01e9-50a0-93b4585e7eb4" rel="noopener noreferrer">Microsoft's instructions</a></p>
+
+      <h2 id="aws">AWS</h2>
+      <p>In the IAM console, open the user (or the root user's security credentials) and assign an MFA device of the authenticator app type. AWS shows a QR code and an option to show the secret key. AWS may ask for two consecutive codes: enter one, wait for 2FA Keyring to show the next, then enter that.</p>
+      <p><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html" rel="noopener noreferrer">AWS's instructions</a></p>
+
+      <h2 id="discord">Discord</h2>
+      <p>In Discord's user settings, open My Account and enable an authenticator app. Discord shows a QR code with the key next to it, then asks for a code to confirm. Save the backup codes Discord offers.</p>
+      <p><a href="https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Multi-Factor-Authentication" rel="noopener noreferrer">Discord's instructions</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

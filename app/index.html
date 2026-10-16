@@ -9,25 +9,33 @@
 <meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://2fa-keyring.com/app/">
 <title>2FA Keyring Vault</title>
-<meta name="description" content="Your two-factor codes, encrypted on your own device.">
-<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../assets/fonts.css">
-<link rel="stylesheet" href="../assets/chrome.css">
-<link rel="stylesheet" href="app.css">
-<script src="../assets/vendor/jsQR.js" defer></script>
-<script src="../assets/totp.js" defer></script>
-<script src="app.js" defer></script>
+<meta name="description" content="Open your 2FA Keyring vault: a free browser authenticator that keeps your two-factor keys encrypted on your device. Try the demo without a passphrase.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="2FA Keyring Vault">
+<meta property="og:description" content="Open your 2FA Keyring vault, or try the demo without a passphrase.">
+<meta property="og:url" content="https://2fa-keyring.com/app/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+<link rel="stylesheet" href="/app/app.css">
+<script src="/assets/vendor/jsQR.js" defer></script>
+<script src="/assets/totp.js" defer></script>
+<script src="/assets/migration.js" defer></script>
+<script src="/app/app.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="site-head">
   <div class="chrome-wrap">
-    <a class="logo" href="../"><img src="../assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <a class="logo" href="/"><img src="../assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
     <nav class="nav" aria-label="Main">
-      <a class="hide-sm" href="../#how">How it works</a>
-      <a href="../security.html">Security</a>
-      <a class="hide-sm" href="../#faq">FAQ</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
       <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
       <span class="vault-state" id="vaultState" data-state="locked">Vault locked</span>
     </nav>
@@ -37,7 +45,7 @@
 <main id="main" class="app-main">
   <div class="chrome-wrap crumbs-row">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="../"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
+      <a href="/"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
       <span class="sep" aria-hidden="true">/</span>
       <span aria-current="page">Vault</span>
     </nav>
@@ -46,7 +54,7 @@
 
   <noscript><div class="chrome-wrap"><p class="blocked">2FA Keyring needs JavaScript to calculate codes and encrypt your vault. Turn JavaScript on for this site and reload.</p></div></noscript>
   <div id="blocked" class="chrome-wrap blocked" hidden>
-    <h1 id="blockedTitle"></h1>
+    <h2 id="blockedTitle"></h2>
     <p class="muted" id="blockedText"></p>
   </div>
 
@@ -69,7 +77,7 @@
         <ul class="assure">
           <li>AES-256-GCM encryption with a key derived from your passphrase</li>
           <li>Network connections blocked by your browser</li>
-          <li>Locks automatically when you step away</li>
+          <li>Locks after 5 minutes without activity (you can change this)</li>
         </ul>
       </div>
       <section class="lock-card" aria-labelledby="lockTitle">
@@ -112,6 +120,10 @@
             <button class="btn" id="rBtn" type="submit">Restore vault</button>
           </form>
         </div>
+        <div class="demo-cta" id="demoCta">
+          <p><b>Just looking?</b> Explore a sample vault first. No passphrase, and nothing is saved.</p>
+          <button class="btn" id="demoBtn" type="button">Try the demo</button>
+        </div>
         <div id="damagedBox" hidden>
           <p class="small muted">Starting over deletes the unreadable vault stored in this browser.</p>
           <button class="btn danger" id="discardBtn" type="button">Discard it and start fresh</button>
@@ -134,19 +146,35 @@
           <button class="btn" id="btnLock" type="button"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Lock</button>
         </div>
       </div>
+      <div class="demo-bar" id="demoBar" hidden>
+        <p><b>Demo vault.</b> These are public test keys, not real accounts. Nothing you do here is saved, and your own vault isn't touched.</p>
+        <div class="btns">
+          <button class="btn primary" id="demoCreate" type="button">Create your vault</button>
+          <button class="btn" id="demoExit" type="button">Exit demo</button>
+        </div>
+      </div>
+      <div class="nudge" id="nudge" hidden role="status">
+        <p id="nudgeText"></p>
+        <div class="btns">
+          <button class="btn primary" id="nudgeBackup" type="button">Back up now</button>
+          <button class="btn" id="nudgeLater" type="button">Later</button>
+        </div>
+      </div>
       <div class="vault-search">
         <svg class="search-ic" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m13.2 13.2 3.3 3.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <input id="q" type="search" placeholder="Search services or accounts" aria-label="Search keys" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <input id="q" type="search" placeholder="Search services, accounts or groups" aria-label="Search keys" aria-keyshortcuts="/" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+        <kbd class="kbd-hint" aria-hidden="true">/</kbd>
       </div>
+      <div class="chips" id="chips" role="group" aria-label="Show" hidden></div>
       <p class="note storageNote vault-note" hidden>This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup now.</p>
       <ul id="list" class="list"></ul>
       <section id="empty" class="empty" hidden>
         <div class="empty-ic" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
         <h2>No keys yet</h2>
-        <p>Add as many services as you like, several at a time. Each needs its setup key (the text code shown beside the QR code), an otpauth:// link, or a QR screenshot.</p>
+        <p>Add a service with its setup key (the text code shown beside the QR code), an otpauth:// link or a QR image. Coming from Google Authenticator? Import all your accounts at once.</p>
         <div class="btns">
           <button class="btn primary" id="emptyAdd" type="button">Add your first key</button>
-          <button class="btn" id="emptyDemo" type="button">Try an example key</button>
+          <button class="btn" id="emptyImport" type="button">Import from Google Authenticator</button>
         </div>
       </section>
       <p id="noMatch" class="muted nomatch" hidden>No keys match that search.</p>
@@ -157,13 +185,17 @@
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
     <nav aria-label="Footer">
-      <a href="../">Home</a>
-      <a href="../security.html">Security</a>
-      <a href="../privacy.html">Privacy</a>
-      <a href="../terms.html">Terms</a>
-      <a href="../security.html#report">Report a vulnerability</a>
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
       <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
     </nav>
   </div>
@@ -175,6 +207,7 @@
     <div class="tabs" role="tablist">
       <button role="tab" id="tabKey" type="button" aria-selected="true" aria-controls="keyForm">Setup keys</button>
       <button role="tab" id="tabLink" type="button" aria-selected="false" aria-controls="linkForm">Links or QR images</button>
+      <button role="tab" id="tabMig" type="button" aria-selected="false" aria-controls="migPanel">Google Authenticator</button>
     </div>
     <form id="keyForm" role="tabpanel" aria-labelledby="tabKey" autocomplete="off">
       <ol id="entries" class="entries"></ol>
@@ -188,6 +221,45 @@
       <p class="err" id="linkErr" role="alert"></p>
       <div class="btns"><button class="btn primary" type="submit">Add</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
     </form>
+    <section id="migPanel" role="tabpanel" aria-labelledby="tabMig" hidden>
+      <div id="migStart" class="mig-step">
+        <ol class="mini-steps">
+          <li>In Google Authenticator, open the menu and choose <b>Transfer accounts</b>, then <b>Export accounts</b>.</li>
+          <li>Take a picture of each QR code it shows. Large exports are split across several codes.</li>
+          <li>Choose the pictures below. They're read on this device and never uploaded.</li>
+        </ol>
+        <div class="field"><label for="migFile">Pictures of the export QR codes</label><input id="migFile" type="file" accept="image/*" multiple></div>
+        <details>
+          <summary>Paste an export link instead</summary>
+          <div class="field"><label for="migText">otpauth-migration:// links, one per line</label><textarea id="migText" rows="3" class="mono-in" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="otpauth-migration://offline?data=..."></textarea></div>
+          <div class="btns"><button class="btn" id="migRead" type="button">Read links</button></div>
+        </details>
+        <p class="err" id="migErr" role="alert"></p>
+        <p class="muted small" id="migParts" role="status"></p>
+      </div>
+      <div id="migReview" class="mig-step" hidden>
+        <h3 id="migReviewTitle" tabindex="-1">Review before importing</h3>
+        <p class="small muted" id="migSummary"></p>
+        <p class="note" id="migMissing" hidden></p>
+        <div class="mig-table-wrap">
+          <table class="mig-table">
+            <thead><tr><th scope="col"><span class="sr-only">Import</span></th><th scope="col">Service</th><th scope="col">Account</th><th scope="col">Status</th></tr></thead>
+            <tbody id="migRows"></tbody>
+          </table>
+        </div>
+        <div class="btns">
+          <button class="btn primary" id="migImport" type="button">Import</button>
+          <button class="btn" id="migMore" type="button">Scan more codes</button>
+          <button class="btn" id="migCancel" type="button">Cancel</button>
+        </div>
+      </div>
+      <div id="migDone" class="mig-step" hidden>
+        <h3>Imported</h3>
+        <p id="migDoneText"></p>
+        <p class="note">Before you remove anything from Google Authenticator, compare a code from each imported account with the same account there, or sign in with it once. Then make a backup of your vault.</p>
+        <div class="btns"><button class="btn primary" id="migDoneClose" type="button">Check my codes</button><button class="btn" id="migDoneBackup" type="button">Back up now</button></div>
+      </div>
+    </section>
   </div>
 </dialog>
 
@@ -197,6 +269,8 @@
     <form id="editForm" autocomplete="off">
       <div class="field"><label for="eIssuer">Service</label><input id="eIssuer" maxlength="80" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
       <div class="field"><label for="eLabel">Account</label><input id="eLabel" maxlength="120" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
+      <div class="field"><label for="eGroup">Group <span class="muted">(optional, for example Work or Personal)</span></label><input id="eGroup" maxlength="40" list="groupList" spellcheck="false" autocorrect="off" autocapitalize="off"><datalist id="groupList"></datalist></div>
+      <label class="check" for="eFav"><input type="checkbox" id="eFav"><span>Show at the top as a favorite</span></label>
       <p class="small muted" id="eSpec"></p>
       <div>
         <button class="linkbtn" id="eReveal" type="button">Show setup key</button>
@@ -227,7 +301,8 @@
       </div>
       <label class="check" for="sHidden"><input type="checkbox" id="sHidden"><span>Also lock as soon as I switch to another tab or app</span></label>
     </section>
-    <section>
+    <p class="note" id="setDemoNote" hidden>You're in the demo. Passphrase and erase settings apply to a real vault.</p>
+    <section id="setPass">
       <h3>Change passphrase</h3>
       <form id="passForm" autocomplete="off">
         <div class="field"><label for="sNew">New passphrase</label><input id="sNew" type="password" autocomplete="new-password"></div>
@@ -238,7 +313,7 @@
       </form>
       <p class="small muted">Use at least 12 characters. Several random words are easy to remember and hard to guess. Older backups still open with the passphrase they were made with.</p>
     </section>
-    <section>
+    <section id="setErase">
       <h3>Erase vault</h3>
       <p class="small muted">Deletes every key stored in this browser. Make a backup first if you may need them.</p>
       <div class="field"><label for="sErase">Type ERASE to confirm</label><input id="sErase" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
@@ -249,28 +324,55 @@
 
 <dialog id="backupDlg" aria-labelledby="bkTitle">
   <div class="dlg">
-    <div class="dlg-head"><h2 id="bkTitle">Backup</h2><button class="icon" type="button" aria-label="Close" data-close="backupDlg">×</button></div>
+    <div class="dlg-head"><h2 id="bkTitle">Backups</h2><button class="icon" type="button" aria-label="Close" data-close="backupDlg">×</button></div>
+    <p class="bk-status" id="bkStatus" role="status"></p>
     <section>
-      <h3>Export an encrypted backup</h3>
-      <p class="small muted">The backup stays encrypted with your passphrase. Without that passphrase it cannot be opened. <span id="bLast"></span></p>
-      <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text" autocorrect="off" autocapitalize="off"></textarea>
+      <h3>1. Save a backup</h3>
+      <p class="small muted">A copy of your vault, still encrypted with your current passphrase. Keep it somewhere you'll still have if this device is lost, like a USB drive or a personal cloud folder.</p>
       <div class="btns">
-        <button class="btn primary" id="bSave" type="button">Save file</button>
-        <button class="btn" id="bCopy" type="button">Copy text</button>
+        <button class="btn primary" id="bSave" type="button">Download backup file</button>
+        <button class="btn" id="bCopy" type="button">Copy backup text</button>
       </div>
+      <details>
+        <summary>Show the backup text</summary>
+        <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text" autocorrect="off" autocapitalize="off"></textarea>
+      </details>
       <p class="err" id="bErr" role="alert"></p>
     </section>
     <section>
-      <h3>Import and merge a backup</h3>
+      <h3>2. Check a backup</h3>
+      <p class="small muted">Makes sure a saved backup opens and shows what's inside. Your vault isn't changed.</p>
+      <form id="checkForm" autocomplete="off">
+        <div class="field"><label for="cFile">Backup file</label><input id="cFile" type="file" accept=".json,application/json,text/plain"></div>
+        <div class="field"><label for="cText">Or paste the backup text</label><textarea id="cText" class="backup-text short" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea></div>
+        <div class="field"><label for="cPass">Passphrase the backup was made with</label><input id="cPass" type="password" autocomplete="off"></div>
+        <p class="err" id="cErr" role="alert"></p>
+        <div class="check-result" id="cResult" role="status" hidden></div>
+        <div class="btns"><button class="btn" type="submit">Check backup</button></div>
+      </form>
+    </section>
+    <section>
+      <h3>3. Merge a backup into this vault</h3>
+      <p class="small muted">Adds keys from a backup that aren't already here. Nothing is removed. To replace a vault on a new device, use "Restore from an encrypted backup" on the unlock screen instead.</p>
       <form id="importForm" autocomplete="off">
         <div class="field"><label for="iFile">Backup file</label><input id="iFile" type="file" accept=".json,application/json,text/plain"></div>
-        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea></div>
+        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text short" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea></div>
         <div class="field"><label for="iPass">Backup passphrase</label><input id="iPass" type="password" autocomplete="off"></div>
         <p class="err" id="iErr" role="alert"></p>
         <p class="ok" id="iOk" role="status"></p>
         <div class="btns"><button class="btn" type="submit">Merge into vault</button></div>
       </form>
     </section>
+    <details class="why">
+      <summary>Why backups matter</summary>
+      <ul>
+        <li><b>Clearing browser data deletes the vault.</b> So does uninstalling the browser or resetting the device. A backup is the only way to get your keys back.</li>
+        <li><b>Private or incognito windows forget everything</b> when they close. Use a normal window for your real vault.</li>
+        <li><b>Each browser has its own vault.</b> Use a backup to move your keys to another browser or device.</li>
+        <li><b>A forgotten passphrase can't be reset.</b> Backups use the same passphrase, so they won't help if you forget it. Keep each service's recovery codes separately.</li>
+      </ul>
+      <p><a href="/guides/backup-and-restore/">Read the backup and restore guide</a></p>
+    </details>
   </div>
 </dialog>
 
