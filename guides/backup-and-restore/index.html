@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Back Up and Restore Your 2FA Vault | 2FA Keyring</title>
+<meta name="description" content="Save, check and restore encrypted backups of your 2FA Keyring vault, and what clearing browser data, private windows and lost passphrases mean.">
+<link rel="canonical" href="https://2fa-keyring.com/guides/backup-and-restore/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Back Up and Restore Your 2FA Vault | 2FA Keyring">
+<meta property="og:description" content="Save, check and restore encrypted backups of your 2FA Keyring vault, and what clearing browser data, private windows and lost passphrases mean.">
+<meta property="og:url" content="https://2fa-keyring.com/guides/backup-and-restore/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/guides/" aria-current="page">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker"><a href="/guides/">Guides</a></p>
+      <h1>Back up and restore your vault</h1>
+      <p class="lead">Your vault exists only in your browser. An encrypted backup is how you recover from a lost device or cleared browser data, and how you move to another browser.</p>
+      <p class="meta">Backups stay encrypted with your passphrase</p>
+    </div>
+  </div>
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#why">Why backups matter</a>
+      <a href="#save">Save a backup</a>
+      <a href="#check">Check a backup</a>
+      <a href="#restore">Restore on a new device</a>
+      <a href="#merge">Merge into an existing vault</a>
+      <a href="#passphrase">Passphrases and backups</a>
+      <a href="#recovery">Recovery codes</a>
+    </nav>
+    <article class="prose">
+      <h2 id="why">Why backups matter</h2>
+      <ul>
+        <li><b>Clearing browser data deletes the vault.</b> So does resetting your device, uninstalling the browser or some "clean up" tools.</li>
+        <li><b>Private and incognito windows</b> forget everything when they close.</li>
+        <li><b>Each browser has its own vault.</b> Chrome and Firefox on the same computer don't share one.</li>
+        <li><b>There's no copy anywhere else.</b> 2FA Keyring has no server or account that could restore your keys.</li>
+      </ul>
+
+      <h2 id="save">Save a backup</h2>
+      <ol>
+        <li>Unlock your vault and choose <b>Backup</b>.</li>
+        <li>Choose <b>Download backup file</b>. The file is named like <code>keyring-backup-2026-10-16.json</code>. If downloads are blocked, choose <b>Copy backup text</b> and paste it into a file yourself.</li>
+        <li>Store it somewhere that survives losing this device: a USB drive, an encrypted drive or a personal cloud folder. Keeping two copies in different places is even better.</li>
+      </ol>
+      <p>The status at the top of the Backups window shows when you last backed up and how many changes you've made since. The app also reminds you after you add, edit or remove keys, or change your passphrase.</p>
+
+      <h2 id="check">Check a backup</h2>
+      <p>Checking proves a backup will work before you need it. It never changes your vault.</p>
+      <ol>
+        <li>In <b>Backup</b>, under <b>Check a backup</b>, choose the backup file (or paste its text).</li>
+        <li>Enter the passphrase you had when you made it, and choose <b>Check backup</b>.</li>
+        <li>The app confirms it opens and how many keys it contains. It also lists keys that are in your vault but missing from the backup, and keys in the backup that aren't in your vault.</li>
+      </ol>
+
+      <h2 id="restore">Restore on a new device or browser</h2>
+      <ol>
+        <li>Open <a href="/app/">2fa-keyring.com/app</a> in the new browser.</li>
+        <li>On the Create your vault screen, choose <b>Restore from an encrypted backup</b>.</li>
+        <li>Choose the backup file, enter its passphrase and choose <b>Restore vault</b>. The restored vault keeps the same passphrase.</li>
+      </ol>
+
+      <h2 id="merge">Merge into an existing vault</h2>
+      <p>If the browser already has a vault, unlock it, choose <b>Backup</b>, and use <b>Merge a backup into this vault</b>. Keys from the backup that aren't already in the vault are added; nothing is removed or replaced.</p>
+
+      <h2 id="passphrase">Passphrases and backups</h2>
+      <ul>
+        <li>A backup opens with the passphrase that was in use when it was made.</li>
+        <li>After you change your passphrase, older backups still need the old one. Make a new backup and delete the old files once you've checked the new one.</li>
+        <li>A forgotten passphrase can't be recovered, so a backup won't help in that case. That's what recovery codes are for.</li>
+      </ul>
+
+      <h2 id="recovery">Keep your recovery codes</h2>
+      <p>When you turn on two-factor at a service, it usually offers recovery or backup codes. They let you sign in if you lose your authenticator. Keep them separate from 2FA Keyring, for example printed or in a password manager, so a single loss can't lock you out of everything.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

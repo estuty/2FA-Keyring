@@ -10,3 +10,6 @@ SECURITY.md
 CNAME
 .nojekyll
 LICENSE
+VERSION
+CHANGELOG.md
+tests

@@ -39,3 +39,6 @@
 .site-foot nav{display:flex;gap:8px 20px;flex-wrap:wrap}
 .site-foot a{color:var(--muted)}
 .site-foot a:hover{color:var(--ink)}
+.foot-about{display:grid;gap:4px}
+.site-foot .build{font:12px/1.4 var(--font-code);color:var(--muted)}
+.site-foot .build a{color:inherit}

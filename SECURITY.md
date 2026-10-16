@@ -24,7 +24,7 @@ In scope:
 - ways around the Content Security Policy, the anti-framing check, or auto-lock
 - code generation that's wrong for a valid key
 
-Out of scope, because the app can't defend against these (see [security.html](security.html#threats)):
+Out of scope, because the app can't defend against these (see the [security page](https://2fa-keyring.com/security/#threats)):
 
 - attacks that need malware, a malicious extension, or control of an unlocked device
 - brute-forcing a weak passphrase that was accepted before the current strength rules
@@ -36,8 +36,8 @@ Only the current version on the `main` branch, as served by the website, receive
 
 ## Design summary
 
-The full model is on the website's security page ([security.html](security.html)). In short:
+The full model is on the website's security page (<https://2fa-keyring.com/security/>). In short:
 
 - Keys are encrypted with AES-256-GCM under a key derived with PBKDF2-SHA256 (600,000 iterations, 16-byte random salt). Only the encrypted vault is stored, in the browser's `localStorage`.
 - Each page's Content Security Policy forbids network connections (`connect-src 'none'`) and allows scripts, styles and fonts only from the site itself.
-- There's no server-side code, no cookies, and no third-party scripts, fonts or analytics. The host only sees ordinary requests for the site's files.
+- There's no server-side code, no cookies, no analytics and no third-party services. The one bundled library (jsQR) and the fonts are served from the site itself. The host only sees ordinary requests for the site's files, but it does serve the code your browser runs, so a compromised deployment is in scope for reports.

@@ -1,0 +1,11 @@
+# Old page addresses (before 1.1.0) -> new folder URLs, permanently
+/security.html /security/ 301
+/privacy.html /privacy/ 301
+/terms.html /terms/ 301
+/security /security/ 301
+/privacy /privacy/ 301
+/terms /terms/ 301
+/guides /guides/ 301
+/app /app/ 301
+/index.html / 301
+/app/index.html /app/ 301

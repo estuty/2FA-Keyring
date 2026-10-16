@@ -6,26 +6,35 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
-<link rel="canonical" href="https://2fa-keyring.com/privacy">
-<title>2FA Keyring Privacy Policy</title>
+<title>Privacy Policy | 2FA Keyring</title>
 <meta name="description" content="How 2FA Keyring handles your data: nothing is collected, your keys stay encrypted on your device, and what the website host can see.">
-<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/chrome.css">
+<link rel="canonical" href="https://2fa-keyring.com/privacy/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Privacy Policy | 2FA Keyring">
+<meta property="og:description" content="How 2FA Keyring handles your data: nothing is collected, your keys stay encrypted on your device, and what the website host can see.">
+<meta property="og:url" content="https://2fa-keyring.com/privacy/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-
 <header class="site-head">
   <div class="chrome-wrap">
-    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
     <nav class="nav" aria-label="Main">
-      <a class="hide-sm" href="./#how">How it works</a>
-      <a href="security.html">Security</a>
-      <a class="hide-sm" href="./#faq">FAQ</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
       <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
-      <a class="nav-cta" href="app/">Open the app</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
     </nav>
   </div>
 </header>
@@ -61,7 +70,7 @@
       <h2 id="summary">Summary</h2>
       <div class="callout">
         <b>We don't collect, store, sell or share your personal data.</b>
-        <p>Your two-factor keys, account names, passphrase and codes are handled only inside your browser, on your device. They're never sent to us or anyone else. There are no accounts, cookies, analytics, ads or third-party scripts.</p>
+        <p>Your two-factor keys, account names, passphrase and codes are handled only inside your browser, on your device. They're never sent to us or anyone else. There are no accounts, cookies, analytics, ads or third-party services.</p>
       </div>
 
       <h2 id="who">Who we are</h2>
@@ -76,19 +85,20 @@
         <li>names, email addresses, phone numbers or any account details, because there are no accounts</li>
         <li>usage statistics, analytics, crash reports or device fingerprints</li>
       </ul>
-      <p>The app is technically prevented from sending data: its Content Security Policy blocks network connections (<code>connect-src 'none'</code>), and it loads no code from any other website. The <a href="security.html">security page</a> explains how this works and how to check it yourself.</p>
+      <p>As an extra layer of defense, the app's Content Security Policy tells your browser to block network connections from the page (<code>connect-src 'none'</code>), and all of the app's code, including its one bundled open-source library, is served from this site. The <a href="/security/">security page</a> explains what this protects against, what it doesn't, and how to check it yourself.</p>
 
       <h2 id="device">What stays on your device</h2>
       <p>The app saves two items in your browser's local storage, on your device only:</p>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable table">
         <table>
           <thead><tr><th>Item</th><th>Contents</th><th>Protection</th></tr></thead>
           <tbody>
             <tr><td>Your vault</td><td>Your keys, with the service and account names you entered</td><td>Encrypted with AES-256-GCM using a key derived from your passphrase. Without the passphrase it's unreadable.</td></tr>
-            <tr><td>Settings</td><td>Auto-lock time, the "lock when I switch tabs" option and the date of your last backup</td><td>Not encrypted. Contains nothing personal.</td></tr>
+            <tr><td>Settings</td><td>Auto-lock time, the "lock when I switch tabs" option, the date of your last backup and how many changes you've made since</td><td>Not encrypted. Contains nothing personal.</td></tr>
           </tbody>
         </table>
       </div>
+      <p>The demo vault is different: it exists only in the page's memory and is never written to storage. Pictures you choose for importing QR codes are read inside the page and aren't uploaded or kept.</p>
       <p>While the vault is unlocked, the decrypted keys exist only in the page's memory. They're cleared when the vault locks or the page closes. We can't see, access or recover anything stored on your device.</p>
 
       <h2 id="host">What the host can see</h2>
@@ -130,20 +140,24 @@
       <p>If this policy changes, the new version will be published on this page with a new effective date. Every past version is kept in the project's public history on GitHub, so you can see exactly what changed and when. We won't change the app to collect personal data without saying so clearly on this page first.</p>
 
       <h2 id="contact">Contact</h2>
-      <p>For questions about this policy, open an issue on the <a href="https://github.com/estuty/2FA-Keyring/issues" rel="noopener noreferrer">project's GitHub page</a>. Please don't include setup keys, backups or other secrets in an issue. To report a security problem privately, use <a href="security.html#report">GitHub's private vulnerability reporting</a>.</p>
+      <p>For questions about this policy, open an issue on the <a href="https://github.com/estuty/2FA-Keyring/issues" rel="noopener noreferrer">project's GitHub page</a>. Please don't include setup keys, backups or other secrets in an issue. To report a security problem privately, use <a href="/security/#report">GitHub's private vulnerability reporting</a>.</p>
     </article>
   </div>
 </main>
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
     <nav aria-label="Footer">
-      <a href="app/">App</a>
-      <a href="security.html">Security</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a href="security.html#report">Report a vulnerability</a>
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
       <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
     </nav>
   </div>

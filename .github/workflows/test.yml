@@ -1,0 +1,34 @@
+# Runs the unit tests on every pull request and push. Never deploys anything.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Unit tests (TOTP vectors, Google Authenticator import)
+        run: node tests/run.js
+      - name: Every page declares a Content Security Policy and canonical URL
+        run: |
+          fail=0
+          for f in $(find . -name '*.html' -not -path './.git/*' -not -path './node_modules/*'); do
+            grep -q 'http-equiv="Content-Security-Policy"' "$f" || { echo "::error file=$f::missing CSP meta"; fail=1; }
+            grep -q 'rel="canonical"' "$f" || { echo "::error file=$f::missing canonical link"; fail=1; }
+            if grep -nE '<script>|<script [^>]*>[^<]' "$f" | grep -v 'application/ld+json'; then echo "::error file=$f::inline script"; fail=1; fi
+            if grep -n 'style="' "$f"; then echo "::error file=$f::inline style attribute"; fail=1; fi
+          done
+          exit $fail

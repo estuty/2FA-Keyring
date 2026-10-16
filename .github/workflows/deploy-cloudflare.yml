@@ -55,6 +55,20 @@ jobs:
         with:
           node-version: 22
 
+      - name: Run unit tests
+        if: steps.creds.outputs.ok == 'true'
+        run: node tests/run.js
+
+      - name: Stamp version and commit into pages
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          version=$(cat VERSION)
+          short=${GITHUB_SHA::7}
+          day=$(date -u +%Y-%m-%d)
+          stamp="${version} · <a href=\"https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\">commit ${short}</a> · deployed ${day}"
+          find . -name '*.html' -not -path './.git/*' -print0 | xargs -0 perl -0pi -e "s{<!--BUILD-->.*?<!--/BUILD-->}{<!--BUILD-->${stamp}<!--/BUILD-->}g"
+          grep -rl "deployed ${day}" --include='*.html' . | head -3
+
       - name: Deploy with Wrangler
         if: steps.creds.outputs.ok == 'true'
         env:
@@ -85,7 +99,7 @@ jobs:
           }
           fail=0
           check "security headers present on /app/" has_headers || fail=1
-          for f in README.md SECURITY.md LICENSE wrangler.jsonc _headers .assetsignore .github/workflows/deploy-cloudflare.yml; do
+          for f in README.md SECURITY.md LICENSE VERSION CHANGELOG.md wrangler.jsonc _headers _redirects .assetsignore tests/run.js .github/workflows/deploy-cloudflare.yml; do
             check "/$f is not served" test "$(code "/$f")" = 404 || fail=1
           done
           check "security.txt is published" test "$(code /.well-known/security.txt)" = 200 || fail=1
@@ -95,9 +109,16 @@ jobs:
             000*) echo "ok: www.2fa-keyring.com isn't reachable, so it can't serve a separate copy" ;;
             *) echo "::warning::www.2fa-keyring.com does not redirect to https://2fa-keyring.com (got: $www). It serves a separate copy with its own vault." ;;
           esac
-          for p in / /app/ /security /privacy /terms; do
+          for p in / /app/ /guides/ /guides/getting-started/ /guides/google-authenticator/ /guides/backup-and-restore/ /guides/add-accounts/ /guides/self-hosting/ /security/ /privacy/ /terms/ /sitemap.xml /robots.txt /assets/og.png; do
             check "$p loads" test "$(code "$p")" = 200 || fail=1
           done
+          redirect() { curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Cache-Control: no-cache' "$SITE_URL$1"; }
+          for pair in "/security.html /security/" "/privacy.html /privacy/" "/terms.html /terms/"; do
+            set -- $pair
+            check "$1 redirects permanently to $2" test "$(redirect "$1")" = "301 $SITE_URL$2" || fail=1
+          done
+          check "unknown pages return 404" test "$(code /no-such-page-$RANDOM)" = 404 || fail=1
+          check "pages show the deployed commit" sh -c "curl -s -H 'Cache-Control: no-cache' '$SITE_URL/' | grep -q 'commit ${GITHUB_SHA::7}'" || fail=1
           curl -sSI "$SITE_URL/app/" || true
           [ "$fail" = 0 ] && echo "Live site verified: security headers present, repository files not served, all pages load."
           exit $fail

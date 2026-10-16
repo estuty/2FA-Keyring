@@ -6,174 +6,230 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
+<title>Free Browser Authenticator, Encrypted on Your Device | 2FA Keyring</title>
+<meta name="description" content="A free, open-source 2FA authenticator that runs in your browser. Your keys stay encrypted on your device. No signup, no tracking. Try the demo.">
 <link rel="canonical" href="https://2fa-keyring.com/">
-<title>2FA Keyring</title>
-<meta name="description" content="A free, open-source authenticator that runs in your browser. Your two-factor keys are encrypted on your own device with a passphrase only you know. No account, no cookies, no tracking.">
-<meta property="og:title" content="2FA Keyring">
-<meta property="og:description" content="Your two-factor codes, encrypted on your own device. No account, no cookies, no tracking.">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Free Browser Authenticator, Encrypted on Your Device | 2FA Keyring">
+<meta property="og:description" content="A free, open-source 2FA authenticator that runs in your browser. Your keys stay encrypted on your device. No signup, no tracking. Try the demo.">
 <meta property="og:url" content="https://2fa-keyring.com/">
-<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/chrome.css">
-<script src="assets/totp.js" defer></script>
-<script src="assets/site.js" defer></script>
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+<script src="/assets/totp.js" defer></script>
+<script src="/assets/site.js" defer></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://2fa-keyring.com/#app","name":"2FA Keyring","url":"https://2fa-keyring.com/","description":"A free, open-source browser authenticator that generates TOTP two-factor codes and keeps keys encrypted on your device.","applicationCategory":"SecurityApplication","operatingSystem":"Any modern web browser","browserRequirements":"Requires JavaScript and the Web Crypto API","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","softwareVersion":"1.1.0"},{"@type":"SoftwareSourceCode","name":"2FA Keyring source code","codeRepository":"https://github.com/estuty/2FA-Keyring","programmingLanguage":"JavaScript","license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","targetProduct":{"@id":"https://2fa-keyring.com/#app"}},{"@type":"WebSite","name":"2FA Keyring","url":"https://2fa-keyring.com/"}]}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-
 <header class="site-head">
   <div class="chrome-wrap">
-    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
     <nav class="nav" aria-label="Main">
-      <a class="hide-sm" href="#how">How it works</a>
-      <a href="security.html">Security</a>
-      <a class="hide-sm" href="#faq">FAQ</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
       <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
-      <a class="nav-cta" href="app/">Open the app</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
     </nav>
   </div>
 </header>
 
 <main id="main">
-  <section class="hero">
+  <section class="hero" aria-labelledby="hero-h">
     <div class="wrap">
       <div class="hero-copy">
-        <h1>Your <span class="nowrap">two-factor</span> codes, <em>encrypted on your own device.</em></h1>
-        <p class="lead">2FA Keyring is a free, open-source authenticator that runs entirely in your browser. There's no account to create, and your keys never go to a server. They stay on your device, locked with a passphrase that only you know.</p>
+        <p class="kicker">Free · Open source · No signup</p>
+        <h1 id="hero-h"><span class="nowrap">Two-factor</span> codes in your browser, <em>encrypted on your device.</em></h1>
+        <p class="lead">2FA Keyring is a free authenticator app that runs in any modern browser. Add your accounts once, then copy a code whenever a site asks for one. Your keys stay on this device, locked with a passphrase only you know. There's no account to create.</p>
         <div class="btns">
-          <a class="btn primary" href="app/">Open the app</a>
-          <a class="btn" href="security.html">Read the security model</a>
+          <a class="btn primary" href="/app/">Create your vault</a>
+          <a class="btn" href="/app/#demo">Try a demo</a>
         </div>
-        <ul class="facts" aria-label="Security facts">
-          <li class="fact">AES-256-GCM</li>
-          <li class="fact">PBKDF2 · 600,000 rounds</li>
-          <li class="fact">Network calls blocked</li>
-          <li class="fact">No cookies or analytics</li>
-        </ul>
-        <p class="works">Works with any service that offers "authenticator app" codes, such as GitHub, Google, Microsoft, AWS, Discord and Dropbox.</p>
+        <p class="works">The demo uses sample keys and saves nothing. Works with services that offer "authenticator app" codes (TOTP), such as Google, GitHub, Microsoft, AWS and Discord.</p>
       </div>
 
-      <figure class="device" aria-label="Live example of the app">
+      <figure class="device" aria-label="Preview of the 2FA Keyring app">
         <div class="device-bar">
           <strong>Your keys</strong>
-          <span class="lockchip">● Encrypted</span>
+          <span class="lockchip">● Encrypted on this device</span>
         </div>
-        <ol class="demo" id="demo">
+        <ol class="demo" id="heroDemo">
+          <li class="demo-row" data-secret="JBSWY3DPEHPK3PXP" data-algo="SHA1" data-digits="6" data-period="30">
+            <span class="mono" aria-hidden="true">M</span>
+            <span class="demo-who"><b>Example Mail</b><span>demo@example.com</span></span>
+            <span class="digits">--- ---</span>
+            <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
+          </li>
           <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" data-algo="SHA1" data-digits="6" data-period="30">
-            <span class="mono" aria-hidden="true">A</span>
-            <span class="demo-who"><b>Example A</b><span>SHA-1 · 6 digits · 30 s</span></span>
+            <span class="mono" aria-hidden="true">C</span>
+            <span class="demo-who"><b>Example Code Host</b><span>demo-developer</span></span>
             <span class="digits">--- ---</span>
             <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
           </li>
           <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA" data-algo="SHA256" data-digits="8" data-period="30">
-            <span class="mono" aria-hidden="true">B</span>
-            <span class="demo-who"><b>Example B</b><span>SHA-256 · 8 digits · 30 s</span></span>
+            <span class="mono" aria-hidden="true">C</span>
+            <span class="demo-who"><b>Example Cloud</b><span>admin@example.com</span></span>
             <span class="digits">---- ----</span>
             <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
           </li>
-          <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA" data-algo="SHA512" data-digits="6" data-period="60">
-            <span class="mono" aria-hidden="true">C</span>
-            <span class="demo-who"><b>Example C</b><span>SHA-512 · 6 digits · 60 s</span></span>
-            <span class="digits">--- ---</span>
-            <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
-          </li>
         </ol>
-        <figcaption class="device-foot">These codes are live, calculated in your browser right now from the public test keys in RFC 6238. They aren't real accounts.</figcaption>
+        <figcaption class="device-foot">Live codes from public test keys, calculated in your browser right now. Not real accounts.</figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="block band" id="model" aria-labelledby="model-h">
-    <div class="wrap">
+  <section class="block band" id="demo" aria-labelledby="demo-h">
+    <div class="wrap try">
       <div class="sec-head">
-        <p class="kicker">What happens to your keys</p>
-        <h2 class="h2" id="model-h">Encrypted before they're stored. Never sent by the app.</h2>
-        <p class="lead">Every key you add goes through the same path, inside your browser, before anything is written to disk.</p>
+        <p class="kicker">Try it here</p>
+        <h2 class="h2" id="demo-h">See how it works, no passphrase needed</h2>
+        <p class="lead">This sample vault runs on this page. Search, filter by group, and click a code to copy it. Nothing is saved.</p>
       </div>
-      <ol class="flow">
-        <li><span class="tag">You type</span><b>Your passphrase</b><p>It's never stored or sent anywhere. It exists only in memory while you unlock the vault.</p></li>
-        <li><span class="tag">Key derivation</span><b>PBKDF2-SHA256</b><p>600,000 rounds with a random 16-byte salt slow down anyone trying to guess your passphrase.</p></li>
-        <li><span class="tag">Encryption</span><b>AES-256-GCM</b><p>Your keys are sealed with a fresh random IV on every save. Any tampering makes decryption fail.</p></li>
-        <li><span class="tag">Storage</span><b>This browser only</b><p>Only the encrypted vault is saved, in this browser's local storage. It never reaches a server.</p></li>
-      </ol>
-      <div class="nonet" role="note">
-        <span class="x" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2.5 4 5.5v6c0 4.9 3.4 8.9 8 10 4.6-1.1 8-5.1 8-10v-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <div>
-          <b>Network connections blocked by your browser</b>
-          <p>The app's Content Security Policy sets <code>connect-src 'none'</code>, so your browser blocks the page from opening network connections of any kind (fetch, XHR, WebSockets and beacons). All code and fonts come from this site, with no CDNs, trackers or third-party scripts. This is a strong safety net, not a substitute for trustworthy code, which is why the code is open for anyone to read.</p>
+      <div class="try-grid">
+        <div class="try-panel" id="tryPanel">
+          <div class="try-tools">
+            <label class="sr-only" for="tryQ">Search the sample vault</label>
+            <input id="tryQ" type="search" placeholder="Search, e.g. cloud" autocomplete="off" spellcheck="false">
+            <div class="try-chips" role="group" aria-label="Show">
+              <button class="chip" type="button" data-f="all" aria-pressed="true">All</button>
+              <button class="chip" type="button" data-f="fav" aria-pressed="false">★ Favorites</button>
+              <button class="chip" type="button" data-f="Work" aria-pressed="false">Work</button>
+              <button class="chip" type="button" data-f="Personal" aria-pressed="false">Personal</button>
+            </div>
+          </div>
+          <ul class="try-list" id="tryList">
+            <li class="try-row" data-secret="JBSWY3DPEHPK3PXP" data-digits="6" data-period="30" data-group="Personal" data-fav="1" data-name="Example Mail demo@example.com Personal"><button class="try-code" type="button"><span class="who"><b>★ Example Mail</b><span>demo@example.com · Personal</span></span><span class="digits">--- ---</span><span class="left" aria-hidden="true"></span></button></li>
+            <li class="try-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" data-digits="6" data-period="30" data-group="Work" data-fav="1" data-name="Example Code Host demo-developer Work"><button class="try-code" type="button"><span class="who"><b>★ Example Code Host</b><span>demo-developer · Work</span></span><span class="digits">--- ---</span><span class="left" aria-hidden="true"></span></button></li>
+            <li class="try-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA" data-algo="SHA256" data-digits="8" data-period="30" data-group="Work" data-name="Example Cloud admin@example.com Work"><button class="try-code" type="button"><span class="who"><b>Example Cloud</b><span>admin@example.com · Work</span></span><span class="digits">---- ----</span><span class="left" aria-hidden="true"></span></button></li>
+            <li class="try-row" data-secret="JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP" data-digits="8" data-period="60" data-group="Personal" data-name="Example Bank Checking Personal"><button class="try-code" type="button"><span class="who"><b>Example Bank</b><span>Checking · Personal · 60-second codes</span></span><span class="digits">---- ----</span><span class="left" aria-hidden="true"></span></button></li>
+          </ul>
+          <p class="try-empty" id="tryEmpty" hidden>No sample keys match.</p>
+          <p class="try-status" id="tryStatus" role="status" aria-live="polite"></p>
         </div>
-      </div>
-      <div class="policy">
-        <p class="cap">The exact policy the app runs under. You can check it with View Source.</p>
-<pre class="code"><code><span class="k">default-src</span> <span class="v">'none'</span>;  <span class="k">script-src</span> <span class="v">'self'</span>;  <span class="k">style-src</span> <span class="v">'self'</span>;
-<span class="k">font-src</span> <span class="v">'self'</span>;  <span class="k">img-src</span> <span class="v">'self' blob:</span>;  <span class="k">connect-src</span> <span class="v">'none'</span>;
-<span class="k">base-uri</span> <span class="v">'none'</span>;  <span class="k">form-action</span> <span class="v">'none'</span>;  <span class="k">object-src</span> <span class="v">'none'</span>;  <span class="k">worker-src</span> <span class="v">'none'</span></code></pre>
+        <div class="try-side">
+          <h3>The full demo also lets you</h3>
+          <ul class="ticks">
+            <li>Add keys with a setup key, a link or a QR image</li>
+            <li>Import a Google Authenticator export</li>
+            <li>Mark favorites and sort keys into groups</li>
+            <li>Change auto-lock settings</li>
+          </ul>
+          <p class="muted small">The demo keeps everything in memory. It never touches a vault you've already created in this browser.</p>
+          <a class="btn primary" href="/app/#demo">Open the full demo</a>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="block" aria-labelledby="limits-h">
+  <section class="block" id="how" aria-labelledby="how-h">
     <div class="wrap">
       <div class="sec-head">
-        <p class="kicker">Honest limits</p>
-        <h2 class="h2" id="limits-h">What it protects against, and what it can't</h2>
-        <p class="lead">No authenticator can protect you from everything. Here's exactly where the line is.</p>
+        <p class="kicker">Getting started</p>
+        <h2 class="h2" id="how-h">Set up in three steps</h2>
       </div>
-      <div class="two">
+      <ol class="steps">
+        <li><h3>Create your vault</h3><p>Choose a passphrase of at least 12 characters. Four or more random words work well. It encrypts everything you add, and it can't be reset, so keep it safe.</p></li>
+        <li><h3>Add your accounts</h3><p>When a service asks you to set up an authenticator app, give 2FA Keyring the setup key, the <code>otpauth://</code> link or a picture of the QR code. You can add several at once, or import from Google Authenticator.</p></li>
+        <li><h3>Back up, then sign in</h3><p>Download an encrypted backup and keep it somewhere safe. After that, open the app, unlock it and click a code to copy it.</p></li>
+      </ol>
+      <p class="after"><a href="/guides/getting-started/">Read the full getting-started guide</a></p>
+    </div>
+  </section>
+
+  <section class="block band" id="migrate" aria-labelledby="migrate-h">
+    <div class="wrap split">
+      <div class="sec-head">
+        <p class="kicker">Switching apps</p>
+        <h2 class="h2" id="migrate-h">Moving from Google Authenticator?</h2>
+        <p class="lead">Bring all your accounts across in one go. The export QR codes are read on your device and never uploaded.</p>
+        <a class="btn" href="/guides/google-authenticator/">Read the migration guide</a>
+      </div>
+      <ol class="mini">
+        <li><b>Export</b><span>In Google Authenticator, choose Transfer accounts, then Export accounts. It shows one or more QR codes.</span></li>
+        <li><b>Scan</b><span>Take a picture of each code and choose the pictures in 2FA Keyring under Add key → Google Authenticator. Large exports split into several codes; the app tells you if one is missing.</span></li>
+        <li><b>Review</b><span>See every account before anything is saved. Accounts already in your vault, and types the app doesn't support, are clearly marked and skipped.</span></li>
+        <li><b>Check, then remove</b><span>Compare a few codes, or sign in once with each account, before you delete anything from your old app.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="backup" aria-labelledby="backup-h">
+    <div class="wrap split">
+      <div class="sec-head">
+        <p class="kicker">Backup and recovery</p>
+        <h2 class="h2" id="backup-h">Your vault lives in this browser. Keep a copy.</h2>
+        <p class="lead">There's no server holding a copy for you, so a backup is how you recover from a lost device or cleared browser data.</p>
+        <a class="btn" href="/guides/backup-and-restore/">Read the backup guide</a>
+      </div>
+      <dl class="facts-list">
+        <div><dt>Clearing browser data deletes the vault</dt><dd>So does resetting the device or uninstalling the browser. An encrypted backup file brings everything back.</dd></div>
+        <div><dt>Private windows don't keep anything</dt><dd>Incognito and private windows erase the vault when they close. Use a normal window.</dd></div>
+        <div><dt>The app tells you when to back up</dt><dd>It counts changes since your last backup and reminds you after you add, edit or remove keys.</dd></div>
+        <div><dt>Check a backup without risk</dt><dd>Open a backup file to confirm it works and see what's in it. Your vault isn't changed.</dd></div>
+        <div><dt>A lost passphrase can't be recovered</dt><dd>Not by you, and not by us. Keep each service's recovery codes somewhere safe and separate.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block band" id="trust" aria-labelledby="trust-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Trust you can check</p>
+        <h2 class="h2" id="trust-h">Don't take our word for it</h2>
+        <p class="lead">Every claim on this page can be checked in the source code or in your own browser.</p>
+      </div>
+      <ul class="proof">
+        <li><b>Open source, MIT licensed</b><span>All the code is public, and you can read, run or host it yourself.</span><a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">View the source</a></li>
+        <li><b>Everything served from this site</b><span>The app's code, its one bundled open-source library (jsQR, for reading QR codes) and the fonts all come from this domain. No CDNs, trackers or analytics.</span><a href="https://github.com/estuty/2FA-Keyring/tree/main/assets/vendor" rel="noopener noreferrer">See the bundled library</a></li>
+        <li><b>A strict security policy</b><span>Your browser blocks the app from opening network connections. It's a strong extra layer of defense, though no policy alone can stop code that has been tampered with.</span><a href="/security/#csp">Read the policy</a></li>
+        <li><b>Check it in your browser</b><span>Open your browser's developer tools while you use the app and watch the network: after the page loads, nothing is sent.</span><a href="/security/#verify">How to check</a></li>
+        <li><b>Security reports</b><span>Problems can be reported privately through GitHub. The site publishes a standard <code>security.txt</code> file.</span><a href="/security/#report">Report a problem</a></li>
+      </ul>
+      <div class="limits">
         <div class="col yes">
           <h3><span class="dot" aria-hidden="true"></span>Protected</h3>
           <ul>
-            <li><b>A stolen backup file or browser profile</b><span>Without your passphrase, the vault is unreadable ciphertext.</span></li>
-            <li><b>A breach of the website's host</b><span>The host only stores the public site files. Your keys and passphrase never reach it.</span></li>
-            <li><b>Tracking and data collection</b><span>No accounts, cookies or analytics, and no network requests from the app once it has loaded.</span></li>
-            <li><b>Someone walking up to your screen later</b><span>Auto-lock clears the decrypted keys from memory after inactivity, or as soon as you switch tabs.</span></li>
-            <li><b>Being loaded inside another site</b><span>The app refuses to run inside a frame, so it can't be overlaid to trick your clicks.</span></li>
+            <li><b>A stolen backup file or browser profile</b><span>Without your passphrase, the vault can't be read.</span></li>
+            <li><b>A breach of the website's host</b><span>The host stores only the public site files. Your keys and passphrase never reach it.</span></li>
+            <li><b>Tracking and data collection</b><span>No accounts, cookies or analytics, and the app sends nothing once loaded.</span></li>
+            <li><b>Someone at your screen later</b><span>The vault locks after 5 minutes without activity by default (1, 5 or 15 minutes, or never), and can lock as soon as you switch tabs.</span></li>
           </ul>
         </div>
         <div class="col no">
           <h3><span class="dot" aria-hidden="true"></span>Not protected</h3>
           <ul>
-            <li><b>A weak passphrase</b><span>Encryption is only as strong as your passphrase. The app requires 12 or more characters and rejects easy ones.</span></li>
-            <li><b>Malware or a malicious browser extension</b><span>Software on your device can read the page while it's unlocked, as with any password manager.</span></li>
-            <li><b>A forgotten passphrase</b><span>There's no reset and no back door. Keep your services' recovery codes somewhere safe.</span></li>
-            <li><b>Clearing your browser data</b><span>That deletes the vault. Export an encrypted backup after adding keys.</span></li>
-            <li><b>What the host can see</b><span>Like any website, the host (GitHub or Cloudflare) sees that your IP address requested the site's files. It never sees anything you type.</span></li>
+            <li><b>Tampered website code</b><span>If the site's deployment or source were compromised, your browser would run whatever was served. Check the address is <code>2fa-keyring.com</code>, or <a href="/guides/self-hosting/">host your own copy</a>.</span></li>
+            <li><b>Malware or a malicious browser extension</b><span>Software on your device can read the page while the vault is unlocked.</span></li>
+            <li><b>A weak or forgotten passphrase</b><span>A weak one can be guessed from a stolen backup. A forgotten one can't be reset.</span></li>
+            <li><b>Phishing</b><span>A code typed into a fake sign-in page can be reused within seconds. Use passkeys or security keys where accounts offer them.</span></li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="block band" id="how" aria-labelledby="how-h">
+  <section class="block" id="security-details" aria-labelledby="sec-h">
     <div class="wrap">
       <div class="sec-head">
-        <p class="kicker">Getting started</p>
-        <h2 class="h2" id="how-h">Set up in under two minutes</h2>
+        <p class="kicker">Security details</p>
+        <h2 class="h2" id="sec-h">What happens to your keys</h2>
+        <p class="lead">Every key you add is encrypted inside your browser before anything is written to storage.</p>
       </div>
-      <ol class="steps">
-        <li><h3>Create your vault</h3><p>Choose a passphrase of at least 12 characters. Four or more random words work well. It encrypts everything that follows.</p></li>
-        <li><h3>Add your keys</h3><p>When a service shows a QR code for an authenticator app, paste the setup key or the <code>otpauth://</code> link, or upload a screenshot of the QR code. You can add several at once.</p></li>
-        <li><h3>Back up, then sign in</h3><p>Export an encrypted backup and store it somewhere safe. From then on, open the app, unlock it and click a code to copy it.</p></li>
+      <ol class="flow">
+        <li><span class="tag">You type</span><b>Your passphrase</b><p>Never stored or sent. It exists only in memory while you unlock the vault.</p></li>
+        <li><span class="tag">Key derivation</span><b>PBKDF2-SHA256</b><p>600,000 rounds with a random 16-byte salt make each passphrase guess slow.</p></li>
+        <li><span class="tag">Encryption</span><b>AES-256-GCM</b><p>A fresh random IV on every save. Any tampering makes decryption fail.</p></li>
+        <li><span class="tag">Storage</span><b>This browser only</b><p>Only the encrypted vault is saved, in this browser's local storage.</p></li>
       </ol>
-    </div>
-  </section>
-
-  <section class="block" aria-labelledby="feat-h">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="kicker">Features</p>
-        <h2 class="h2" id="feat-h">Everything an authenticator needs, nothing it doesn't</h2>
-      </div>
-      <dl class="features">
-        <div><dt>Live codes with countdown</dt><dd>Each code shows the time left, and the next code appears just before it changes.</dd></div>
-        <div><dt>Every common format</dt><dd>SHA-1, SHA-256 and SHA-512, with 6, 7 or 8 digits and any period from 1 to 300 seconds.</dd></div>
-        <div><dt>Three ways to add keys</dt><dd>Type the setup key, paste <code>otpauth://</code> links, or upload QR screenshots. The QR codes are decoded on your device.</dd></div>
-        <div><dt>Encrypted backups</dt><dd>Export to a file or as text, restore on another device, or merge with an existing vault.</dd></div>
-        <div><dt>Auto-lock</dt><dd>Locks after 1, 5 or 15 minutes of inactivity, and optionally as soon as you leave the tab.</dd></div>
-        <div><dt>Works offline</dt><dd>Codes depend only on your key and your clock, so no connection is needed once the page has loaded.</dd></div>
-      </dl>
+      <p class="after"><a href="/security/">Read the full security model</a></p>
     </div>
   </section>
 
@@ -185,43 +241,64 @@
       </div>
       <div class="faq">
         <details>
-          <summary>Can anyone else see my keys, including the people who run this site?</summary>
-          <div class="ans"><p>No. Your keys are encrypted in your browser and saved only on your device. The site is just static files with no backend to receive them, and the app's security policy blocks network connections.</p><p>As with any website, the company hosting the files can see that your IP address loaded them, but nothing you type or store is ever sent.</p></div>
+          <summary>Can anyone else see my keys, including whoever runs this site?</summary>
+          <div class="ans"><p>No. Your keys are encrypted in your browser and saved only on your device. The site is static files with no backend to receive them. Like any website, the host sees that your IP address loaded the files, but nothing you type or store is sent.</p></div>
+        </details>
+        <details>
+          <summary>Is the demo safe to try if I already have a vault?</summary>
+          <div class="ans"><p>Yes. The demo uses public test keys and keeps everything in memory. It never reads or writes your saved vault, and closing it leaves no trace.</p></div>
         </details>
         <details>
           <summary>What happens if I forget my passphrase?</summary>
-          <div class="ans"><p>The vault can't be opened, by you or by anyone else. That's what keeps it secure. Use each service's recovery codes to sign in and set up two-factor again, then create a new vault.</p></div>
+          <div class="ans"><p>The vault can't be opened, by you or anyone else. That's what keeps it safe. Use each service's recovery codes to sign in again and set up two-factor afresh.</p></div>
         </details>
         <details>
-          <summary>How do I move my keys to a new computer or phone?</summary>
-          <div class="ans"><p>In the app, open Backup and save the encrypted backup file. On the new device, open the app, choose "Restore from an encrypted backup", and enter the passphrase the backup was made with.</p></div>
+          <summary>How do I move to a new computer or phone?</summary>
+          <div class="ans"><p>Download an encrypted backup from the app. On the new device, open 2FA Keyring, choose "Restore from an encrypted backup" and enter the passphrase you had when you made it. See the <a href="/guides/backup-and-restore/">backup guide</a>.</p></div>
         </details>
         <details>
-          <summary>Why does my vault disappear in a private window?</summary>
-          <div class="ans"><p>Private windows erase local storage when they close, and each browser keeps its own vault. Use a normal window, and keep a backup.</p></div>
+          <summary>Does it work offline?</summary>
+          <div class="ans"><p>Once the app is open and unlocked, codes keep working without a connection, because they're calculated from your keys and your device's clock. Opening the app again while offline isn't guaranteed: your browser may need the network to load the page.</p></div>
         </details>
         <details>
           <summary>My codes are rejected. What's wrong?</summary>
-          <div class="ans"><p>Time-based codes depend on your device's clock. Make sure your clock is set automatically. If a service uses non-default settings, check the key's Advanced options (algorithm, digits, period) against what the service shows.</p></div>
+          <div class="ans"><p>Codes depend on your device's clock, so make sure it's set automatically. If a service uses non-default settings, check the key's algorithm, digits and period against what the service shows.</p></div>
         </details>
         <details>
-          <summary>How can I check these claims myself?</summary>
-          <div class="ans"><p>Open your browser's developer tools on the app and watch the Network tab while you use it: you'll see only this site's own files. The full source is on GitHub, and the <a href="security.html#verify">security page</a> lists step-by-step checks.</p></div>
+          <summary>Does it work with push approvals or passkeys?</summary>
+          <div class="ans"><p>No. 2FA Keyring makes the 6 to 8 digit codes that services call "authenticator app" or TOTP codes. Tapping "Approve" in a company's own app, and passkeys, are different sign-in methods. The <a href="/guides/add-accounts/">account setup guide</a> explains the difference.</p></div>
         </details>
         <details>
           <summary>Is it free?</summary>
-          <div class="ans"><p>Yes. There's no account, no subscription and no ads.</p></div>
+          <div class="ans"><p>Yes. There's no account, subscription or advertising, and the code is MIT licensed.</p></div>
         </details>
       </div>
     </div>
   </section>
 
-  <section class="block closing" aria-labelledby="close-h">
+  <section class="block" id="maintenance" aria-labelledby="maint-h">
     <div class="wrap">
-      <h2 class="h2" id="close-h">Your keys, your device, your passphrase.</h2>
+      <div class="sec-head">
+        <p class="kicker">Project status</p>
+        <h2 class="h2" id="maint-h">Maintenance and support</h2>
+      </div>
+      <dl class="status">
+        <div><dt>Current version</dt><dd><!--BUILD-->1.1.0 · preview build<!--/BUILD--></dd></div>
+        <div><dt>Changes</dt><dd><a href="https://github.com/estuty/2FA-Keyring/blob/main/CHANGELOG.md" rel="noopener noreferrer">Changelog</a> · <a href="https://github.com/estuty/2FA-Keyring/commits/main" rel="noopener noreferrer">Commit history</a></dd></div>
+        <div><dt>Maintained by</dt><dd><a href="https://github.com/estuty" rel="noopener noreferrer">estuty</a> on GitHub</dd></div>
+        <div><dt>Questions and bugs</dt><dd><a href="https://github.com/estuty/2FA-Keyring/issues" rel="noopener noreferrer">GitHub issues</a> (never include keys or backups)</dd></div>
+        <div><dt>Security problems</dt><dd><a href="https://github.com/estuty/2FA-Keyring/security/advisories/new" rel="noopener noreferrer">Report privately</a> · <a href="/.well-known/security.txt">security.txt</a></dd></div>
+        <div><dt>License</dt><dd><a href="https://github.com/estuty/2FA-Keyring/blob/main/LICENSE" rel="noopener noreferrer">MIT</a></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block band closing" aria-labelledby="close-h">
+    <div class="wrap">
+      <h2 class="h2" id="close-h">Ready when you are.</h2>
       <div class="btns">
-        <a class="btn primary" href="app/">Open 2FA Keyring</a>
-        <a class="btn" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">View the source</a>
+        <a class="btn primary" href="/app/">Create your vault</a>
+        <a class="btn" href="/app/#demo">Try a demo</a>
       </div>
     </div>
   </section>
@@ -229,13 +306,17 @@
 
 <footer class="site-foot">
   <div class="chrome-wrap">
-    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
     <nav aria-label="Footer">
-      <a href="app/">App</a>
-      <a href="security.html">Security</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a href="security.html#report">Report a vulnerability</a>
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
       <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
     </nav>
   </div>

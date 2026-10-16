@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Getting Started with a Free Browser Authenticator | 2FA Keyring</title>
+<meta name="description" content="Set up 2FA Keyring in about five minutes: create an encrypted vault, add your first two-factor account, make a backup and sign in with a code.">
+<link rel="canonical" href="https://2fa-keyring.com/guides/getting-started/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Getting Started with a Free Browser Authenticator | 2FA Keyring">
+<meta property="og:description" content="Set up 2FA Keyring in about five minutes: create an encrypted vault, add your first two-factor account, make a backup and sign in with a code.">
+<meta property="og:url" content="https://2fa-keyring.com/guides/getting-started/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/guides/" aria-current="page">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker"><a href="/guides/">Guides</a></p>
+      <h1>Getting started with 2FA Keyring</h1>
+      <p class="lead">Set up a free, local authenticator in your browser: create a vault, add your first account, make a backup and sign in with a code.</p>
+      <p class="meta">About 5 minutes · No account needed</p>
+    </div>
+  </div>
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#before">Before you start</a>
+      <a href="#vault">1. Create your vault</a>
+      <a href="#add">2. Add an account</a>
+      <a href="#backup">3. Make a backup</a>
+      <a href="#signin">4. Sign in with a code</a>
+      <a href="#daily">Everyday use</a>
+    </nav>
+    <article class="prose">
+      <h2 id="before">Before you start</h2>
+      <ul>
+        <li><b>Use a normal browser window,</b> not a private or incognito one. Private windows erase everything when they close.</li>
+        <li><b>Each browser keeps its own vault.</b> Pick the browser you'll use for signing in. You can copy your vault to others later with a backup.</li>
+        <li><b>Want to look around first?</b> <a href="/app/#demo">Open the demo</a>. It uses sample keys and saves nothing.</li>
+      </ul>
+
+      <h2 id="vault">1. Create your vault</h2>
+      <ol>
+        <li>Open <a href="/app/">2fa-keyring.com/app</a>.</li>
+        <li>Choose a passphrase of at least 12 characters. Four or more random words, like <i>copper lantern river mint</i>, are strong and easy to remember. Don't reuse a password from another site.</li>
+        <li>Type it again to confirm, then choose <b>Create vault</b>.</li>
+      </ol>
+      <div class="callout warn">
+        <b>Your passphrase can't be reset</b>
+        <p>Nobody, including the people who make 2FA Keyring, can recover it. Write it down somewhere safe, or keep it in a password manager you trust.</p>
+      </div>
+
+      <h2 id="add">2. Add an account</h2>
+      <p>Go to the security settings of a service you use, and choose to set up two-factor authentication with an <b>authenticator app</b>. The service shows a QR code. Then in 2FA Keyring, choose <b>Add key</b> and use whichever is easiest:</p>
+      <ul>
+        <li><b>Setup key:</b> most services have a link under the QR code to show the key as text. Copy it into the Setup key field, and add the service name.</li>
+        <li><b>Link or QR image:</b> paste an <code>otpauth://</code> link, or choose a screenshot or photo of the QR code. It's read on your device.</li>
+        <li><b>Google Authenticator:</b> import several accounts at once. See the <a href="/guides/google-authenticator/">migration guide</a>.</li>
+      </ul>
+      <p>While you type a setup key, 2FA Keyring shows the current code. Enter that code on the service's page to finish turning on two-factor. Save the recovery codes the service gives you somewhere separate from 2FA Keyring.</p>
+      <p>Service-specific tips are in <a href="/guides/add-accounts/">Set up two-factor on popular services</a>.</p>
+
+      <h2 id="backup">3. Make a backup</h2>
+      <ol>
+        <li>Choose <b>Backup</b>, then <b>Download backup file</b>.</li>
+        <li>Store the file somewhere you'll still have if this device is lost: a USB drive, or a personal cloud folder.</li>
+        <li>Under <b>Check a backup</b>, choose the file you just saved and enter your passphrase. The app confirms it opens and lists what's inside, without changing your vault.</li>
+      </ol>
+      <p>After you add, edit or remove keys, the app shows how many changes you've made since your last backup. Make a fresh one when it asks.</p>
+
+      <h2 id="signin">4. Sign in with a code</h2>
+      <ol>
+        <li>When a site asks for a verification code, open 2FA Keyring and unlock your vault.</li>
+        <li>Click the code next to the account to copy it, then paste it into the site. The ring shows how many seconds are left; the next code appears just before it changes.</li>
+      </ol>
+
+      <h2 id="daily">Everyday use</h2>
+      <ul>
+        <li><b>Find accounts fast:</b> press <kbd>/</kbd> to jump to search. Star accounts to keep them at the top, and give them groups like Work or Personal (edit a key to set its group).</li>
+        <li><b>Auto-lock:</b> the vault locks after 5 minutes without activity. In <b>Settings</b> choose 1, 5 or 15 minutes or never, and optionally lock as soon as you switch tabs.</li>
+        <li><b>Leaving the page locks the vault.</b> You'll unlock it with your passphrase next time.</li>
+      </ul>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

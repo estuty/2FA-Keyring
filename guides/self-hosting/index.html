@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Self-Host 2FA Keyring | 2FA Keyring</title>
+<meta name="description" content="Run your own copy of 2FA Keyring on your computer or your own domain, with the right security headers and an isolated origin.">
+<link rel="canonical" href="https://2fa-keyring.com/guides/self-hosting/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="2FA Keyring">
+<meta property="og:title" content="Self-Host 2FA Keyring | 2FA Keyring">
+<meta property="og:description" content="Run your own copy of 2FA Keyring on your computer or your own domain, with the right security headers and an isolated origin.">
+<meta property="og:url" content="https://2fa-keyring.com/guides/self-hosting/">
+<meta property="og:image" content="https://2fa-keyring.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="2FA Keyring: a free browser authenticator that keeps your keys encrypted on your device">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="/"><img src="/assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/guides/" aria-current="page">Guides</a>
+      <a href="/security/">Security</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="/app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker"><a href="/guides/">Guides</a></p>
+      <h1>Host your own copy</h1>
+      <p class="lead">2FA Keyring is plain static files with no build step. Running your own copy means you don't depend on this website, or on whoever deploys it.</p>
+      <p class="meta">For people comfortable with web hosting</p>
+    </div>
+  </div>
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#why">Why self-host</a>
+      <a href="#local">Run it on your computer</a>
+      <a href="#host">Host it on the web</a>
+      <a href="#headers">Security headers</a>
+      <a href="#origin">Choose the address carefully</a>
+      <a href="#update">Updating</a>
+    </nav>
+    <article class="prose">
+      <h2 id="why">Why self-host</h2>
+      <p>Your browser runs whatever code a website serves. On <code>2fa-keyring.com</code> that's the code in the public repository, deployed automatically. A copy you host yourself only changes when you update it, after you've reviewed the changes.</p>
+
+      <h2 id="local">Run it on your computer</h2>
+      <ol>
+        <li>Download the repository from <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">GitHub</a> (Code → Download ZIP) and unzip it, or clone it with git.</li>
+        <li>In that folder, start a local web server. With Node.js installed, <code>npx wrangler dev</code> serves it exactly as Cloudflare does, including the security headers. Python's <code>python3 -m http.server 8000</code> also works.</li>
+        <li>Open the address it prints, such as <code>http://localhost:8787/app/</code>. Browsers allow encryption on <code>localhost</code> without HTTPS.</li>
+      </ol>
+      <p>Opening the HTML files directly from disk (<code>file://</code>) won't work, because the pages load their scripts and styles from the site root.</p>
+
+      <h2 id="host">Host it on the web</h2>
+      <ul>
+        <li><b>Cloudflare Workers:</b> the repository includes <code>wrangler.jsonc</code>. Run <code>npx wrangler deploy</code> and attach your own domain in the Cloudflare dashboard.</li>
+        <li><b>Any static host:</b> upload the files as they are, serve them over HTTPS, and configure the headers below.</li>
+      </ul>
+
+      <h2 id="headers">Security headers</h2>
+      <p>Each page already declares a Content Security Policy in a meta tag. Send these as HTTP headers too; <code>_headers</code> in the repository has the exact values:</p>
+      <ul>
+        <li><code>Content-Security-Policy</code>, including <code>frame-ancestors 'none'</code>, which meta tags can't set</li>
+        <li><code>Strict-Transport-Security</code>, <code>X-Content-Type-Options: nosniff</code> and <code>X-Frame-Options: DENY</code></li>
+        <li><code>Permissions-Policy</code>, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Resource-Policy</code></li>
+      </ul>
+      <p>Don't serve the repository's own files (README, configuration). On Cloudflare, <code>.assetsignore</code> handles this.</p>
+
+      <h2 id="origin">Choose the address carefully</h2>
+      <p>A browser keeps storage per origin (scheme, host and port), and every page on an origin can read it. Use a domain or subdomain that serves nothing else, such as <code>2fa.example.com</code>. Avoid shared hosts like <code>username.github.io</code>, where all of an account's project sites share one origin, and which can't send security headers.</p>
+      <p>Vaults don't move between addresses automatically. To switch from 2fa-keyring.com to your copy, download a backup here and restore it there.</p>
+
+      <h2 id="update">Updating</h2>
+      <p>Watch the repository's releases and <a href="https://github.com/estuty/2FA-Keyring/blob/main/CHANGELOG.md" rel="noopener noreferrer">changelog</a>. Review changes before deploying them, especially in <code>app/</code> and <code>assets/</code>. The vault format is designed to stay compatible, but keep a backup before updating.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <div class="foot-about">
+      <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
+      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="/app/">App</a>
+      <a href="/guides/">Guides</a>
+      <a href="/security/">Security</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/security/#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

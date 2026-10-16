@@ -1,9 +1,14 @@
 /*
  * 2FA Keyring app.
- * Depends on ../assets/totp.js (TOTP core) and ../assets/vendor/jsQR.js (QR decoding).
- * Keys are encrypted with AES-256-GCM using a key derived from your passphrase
- * (PBKDF2-SHA256, 600,000 iterations) and stored in this browser's localStorage.
- * The page's Content-Security-Policy forbids all network connections (connect-src 'none').
+ * Depends on /assets/totp.js (TOTP core), /assets/migration.js (Google Authenticator export decoder)
+ * and /assets/vendor/jsQR.js (QR decoding). Everything runs in this page.
+ *
+ * Storage (this browser only):
+ *   keyring.vault.v1  encrypted envelope {app,v:1,kdf,iter,salt,iv,ct}. The ciphertext holds
+ *                     {accounts:[...], savedAt}. Accounts may carry optional "group" and "fav".
+ *   keyring.prefs.v1  non-secret settings: auto-lock, last backup time, changes since backup.
+ * Keys are encrypted with AES-256-GCM using a key derived from the passphrase
+ * (PBKDF2-SHA256, 600,000 iterations). The demo vault lives in memory only and never writes storage.
  */
 (function () {
   "use strict";
@@ -25,24 +30,35 @@
     return;
   }
   var C = 94.2478;
-  var DEMO = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+  var HERO_KEY = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
   var LS_VAULT = "keyring.vault.v1", LS_PREFS = "keyring.prefs.v1";
   var MIN_PASS = 12;
   var PBKDF_ITER = 600000;
   var enc = new TextEncoder(), dec = new TextDecoder();
 
+  /* Public test keys for the demo: RFC 6238 seeds and the widely used example key. */
+  var DEMO_ACCOUNTS = [
+    { issuer: "Example Mail", label: "demo@example.com", secret: "JBSWY3DPEHPK3PXP", group: "Personal", fav: true },
+    { issuer: "Example Code Host", label: "demo-developer", secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", group: "Work", fav: true },
+    { issuer: "Example Cloud", label: "admin@example.com", secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA", algo: "SHA256", digits: 8, group: "Work" },
+    { issuer: "Example Chat", label: "demo#0001", secret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA", algo: "SHA512", group: "Personal" },
+    { issuer: "Example Bank", label: "Checking ••42", secret: "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP", digits: 8, period: 60, group: "Finance" },
+    { issuer: "Example Shop", label: "demo shopper", secret: "KRSXG5BAMV4GC3LQNRSSA23FPEQGM33SEBSGK3LP" }
+  ];
+
   /* ---------- storage ---------- */
-  var storageOK = true, memVault = null, damaged = false;
+  var storageOK = true, damaged = false;
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { storageOK = false; return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { storageOK = false; return false; } }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
 
-  var S = { key: null, salt: null, iter: PBKDF_ITER, accounts: [] };
+  var S = { key: null, salt: null, iter: PBKDF_ITER, accounts: [], demo: false, open: false };
   var envelope = null;
-  var prefs = { autolock: 5, lastBackup: 0, lockHidden: false };
+  var prefs = { autolock: 5, lastBackup: 0, lockHidden: false, changes: 0, nudgeHiddenAt: -1 };
   var lastActive = Date.now();
   var rows = new Map();
   var keyCache = new Map();
+  var filter = "all";
 
   function checkEnvelope(e) {
     if (!e || e.app !== "keyring" || e.v !== 1 || typeof e.salt !== "string" || typeof e.iv !== "string" ||
@@ -54,6 +70,7 @@
 
   function loadStored() {
     var raw = lsGet(LS_VAULT);
+    envelope = null; damaged = false;
     if (raw) {
       try { envelope = checkEnvelope(JSON.parse(raw)); } catch (e) { damaged = true; }
     }
@@ -64,10 +81,12 @@
         if ([0, 1, 5, 15].indexOf(o.autolock) >= 0) prefs.autolock = o.autolock;
         if (Number.isFinite(o.lastBackup)) prefs.lastBackup = o.lastBackup;
         if (typeof o.lockHidden === "boolean") prefs.lockHidden = o.lockHidden;
+        if (Number.isInteger(o.changes) && o.changes >= 0) prefs.changes = o.changes;
+        if (Number.isInteger(o.nudgeHiddenAt)) prefs.nudgeHiddenAt = o.nudgeHiddenAt;
       } catch (e) {}
     }
   }
-  function savePrefs() { lsSet(LS_PREFS, JSON.stringify(prefs)); }
+  function savePrefs() { if (!S.demo) lsSet(LS_PREFS, JSON.stringify(prefs)); }
 
   /* ---------- crypto ---------- */
   function b64e(buf) {
@@ -101,10 +120,12 @@
   }
 
   var saveChain = Promise.resolve();
+  /* Writes the encrypted vault. Never runs in the demo. */
   function persist() {
+    if (S.demo) return Promise.resolve();
     saveChain = saveChain.then(async function () {
-      if (!S.key) return;
-      var env = await seal(S.key, S.salt, S.iter, { accounts: S.accounts });
+      if (!S.key || S.demo) return;
+      var env = await seal(S.key, S.salt, S.iter, { accounts: S.accounts, savedAt: Date.now() });
       envelope = env;
       damaged = false;
       var ok = lsSet(LS_VAULT, JSON.stringify(env));
@@ -112,11 +133,19 @@
     }).catch(function () {});
     return saveChain;
   }
+  /* Records that the vault changed since the last backup. */
+  function noteChange(n) {
+    if (S.demo) return;
+    prefs.changes += n || 1;
+    savePrefs();
+    renderNudge();
+  }
   function updateStorageNote(show) {
     document.querySelectorAll(".storageNote").forEach(function (n) { n.hidden = !(show || !storageOK); });
   }
 
   /* ---------- accounts ---------- */
+  function cleanGroup(g) { return String(g || "").replace(/\s+/g, " ").trim().slice(0, 40); }
   function makeAccount(o) {
     var secret = normSecret(o.secret);
     if (secret.length < 8) throw uerr("The setup key is too short. It is usually 16 or more letters and digits.");
@@ -130,11 +159,15 @@
     var issuer = String(o.issuer || "").trim().slice(0, 80);
     var label = String(o.label || "").trim().slice(0, 120);
     if (!issuer && !label) throw uerr("Enter a service name or an account.");
-    return {
+    var a = {
       id: typeof o.id === "string" && o.id ? o.id : crypto.randomUUID(),
       issuer: issuer, label: label, secret: secret, algo: algo, digits: digits, period: period,
       added: Number.isFinite(o.added) ? o.added : Date.now()
     };
+    var g = cleanGroup(o.group);
+    if (g) a.group = g;
+    if (o.fav === true) a.fav = true;
+    return a;
   }
   function sanitizeAccounts(arr) {
     var out = [];
@@ -142,11 +175,8 @@
     arr.forEach(function (o) { try { out.push(makeAccount(o)); } catch (e) {} });
     return out;
   }
-  function isDup(a) {
-    return S.accounts.some(function (x) {
-      return x.secret === a.secret && x.algo === a.algo && x.digits === a.digits && x.period === a.period;
-    });
-  }
+  function sameKey(x, a) { return x.secret === a.secret && x.algo === a.algo && x.digits === a.digits && x.period === a.period; }
+  function isDup(a) { return S.accounts.some(function (x) { return sameKey(x, a); }); }
   async function keyFor(a) {
     var sig = a.secret + "|" + a.algo;
     var c = keyCache.get(a.id);
@@ -161,6 +191,11 @@
     var h = 0;
     for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
     return h % 360;
+  }
+  function groupsInUse() {
+    var set = new Set();
+    S.accounts.forEach(function (a) { if (a.group) set.add(a.group); });
+    return Array.from(set).sort(function (x, y) { return x.localeCompare(y); });
   }
 
   /* ---------- small helpers ---------- */
@@ -188,11 +223,12 @@
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
   }
   function fmtDate(ts) {
     return new Date(ts).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
   function openDlg(d) { if (!d.open) d.showModal(); }
   document.querySelectorAll("dialog").forEach(function (d) {
     d.addEventListener("click", function (ev) { if (ev.target === d) d.close(); });
@@ -200,6 +236,9 @@
   document.querySelectorAll("[data-close]").forEach(function (b) {
     b.addEventListener("click", function () { $("#" + b.getAttribute("data-close")).close(); });
   });
+  function readBackupText(text) {
+    try { return checkEnvelope(JSON.parse(text)); } catch (e) { return null; }
+  }
 
   /* ---------- passphrase strength ---------- */
   var COMMON = ["password", "passphrase", "123456", "qwerty", "letmein", "welcome", "iloveyou", "admin", "monkey", "dragon", "abc123", "111111", "keyring", "authenticator"];
@@ -238,17 +277,17 @@
   var lockView = $("#lockView"), appView = $("#appView");
   var mode = "create";
 
-  function setVaultState(open) {
+  function setVaultState(state) {
     var st = $("#vaultState");
-    st.setAttribute("data-state", open ? "unlocked" : "locked");
-    st.textContent = open ? "Vault unlocked" : "Vault locked";
-    $("#leaveNote").hidden = !open;
+    st.setAttribute("data-state", state);
+    st.textContent = state === "unlocked" ? "Vault unlocked" : state === "demo" ? "Demo vault" : "Vault locked";
+    $("#leaveNote").hidden = state !== "unlocked";
   }
 
   function showLock(note) {
     appView.hidden = true;
     lockView.hidden = false;
-    setVaultState(false);
+    setVaultState("locked");
     mode = damaged ? "damaged" : envelope ? "unlock" : "create";
     $("#lockErr").textContent = "";
     $("#lockNote").textContent = note || "";
@@ -274,25 +313,37 @@
   }
 
   function enterApp() {
+    S.open = true;
     lockView.hidden = true;
     appView.hidden = false;
-    setVaultState(true);
+    setVaultState(S.demo ? "demo" : "unlocked");
+    $("#demoBar").hidden = !S.demo;
     lastActive = Date.now();
     $("#q").value = "";
+    filter = "all";
     render();
+    renderNudge();
     updateStorageNote(false);
   }
 
-  function lock(note) {
-    S.key = null; S.salt = null; S.accounts = [];
+  function wipeMemory() {
+    S.key = null; S.salt = null; S.accounts = []; S.open = false; S.demo = false;
     keyCache.clear(); rows.clear();
     $("#list").replaceChildren();
     document.querySelectorAll("dialog").forEach(function (d) { if (d.open) d.close(); });
     $("#entries").replaceChildren();
-    ["#lLinks", "#eSecret", "#bText", "#iText", "#iPass", "#sNew", "#sNew2"].forEach(function (s) {
+    resetMigration();
+    ["#lLinks", "#eSecret", "#bText", "#iText", "#iPass", "#cText", "#cPass", "#sNew", "#sNew2", "#migText"].forEach(function (s) {
       var el = $(s); if (!el) return;
       if ("value" in el) el.value = ""; else el.textContent = "";
     });
+    $("#cResult").hidden = true; $("#cResult").replaceChildren();
+    $("#demoBar").hidden = true;
+  }
+
+  function lock(note) {
+    wipeMemory();
+    loadStored();
     showLock(note);
   }
 
@@ -312,10 +363,13 @@
         checkNewPass(pass, $("#pass2").value);
         var salt = crypto.getRandomValues(new Uint8Array(16));
         var key = await deriveKey(pass, salt, PBKDF_ITER);
+        S.demo = false;
         S.key = key; S.salt = salt; S.iter = PBKDF_ITER; S.accounts = [];
+        prefs.changes = 0; prefs.lastBackup = 0; prefs.nudgeHiddenAt = -1; savePrefs();
         await persist();
       } else {
         var r = await openEnvelope(envelope, pass);
+        S.demo = false;
         S.key = r.key; S.salt = r.salt; S.iter = r.iter; S.accounts = sanitizeAccounts(r.data.accounts);
       }
       mode = "unlock";
@@ -339,17 +393,19 @@
   $("#restoreForm").addEventListener("submit", async function (ev) {
     ev.preventDefault();
     var err = $("#rErr"); err.textContent = "";
-    var env;
-    try { env = checkEnvelope(JSON.parse($("#rText").value)); }
-    catch (e) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
+    var env = readBackupText($("#rText").value);
+    if (!env) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
     $("#rBtn").disabled = true;
     try {
       var r = await openEnvelope(env, $("#rPass").value);
+      S.demo = false;
       S.key = r.key; S.salt = r.salt; S.iter = r.iter; S.accounts = sanitizeAccounts(r.data.accounts);
       await persist();
+      prefs.changes = 0; prefs.nudgeHiddenAt = -1; savePrefs();
       $("#rPass").value = ""; $("#rText").value = "";
       mode = "unlock";
       enterApp();
+      toast("Vault restored with " + plural(S.accounts.length, "key", "keys"));
     } catch (e) {
       err.textContent = "That passphrase doesn't open this backup.";
     } finally { $("#rBtn").disabled = false; }
@@ -359,7 +415,46 @@
     showLock("Starting fresh. Create a new vault.");
   });
 
+  /* ---------- demo ---------- */
+  function enterDemo() {
+    wipeMemory();
+    S.demo = true;
+    S.key = null;
+    S.accounts = DEMO_ACCOUNTS.map(function (o, i) {
+      return makeAccount(Object.assign({ id: "demo-" + i, added: Date.UTC(2026, 0, 1) }, o));
+    });
+    enterApp();
+    toast("Demo vault opened. Nothing here is saved.");
+  }
+  function exitDemo(note) {
+    wipeMemory();
+    try { if (location.hash === "#demo") history.replaceState(null, "", location.pathname); } catch (e) {}
+    loadStored();
+    showLock(note);
+  }
+  $("#demoBtn").addEventListener("click", enterDemo);
+  $("#demoExit").addEventListener("click", function () { exitDemo("You left the demo. Nothing from it was saved."); });
+  $("#demoCreate").addEventListener("click", function () {
+    exitDemo(envelope ? "This browser already has a vault. Unlock it with your passphrase." : "");
+  });
+
+  /* ---------- backup reminder ---------- */
+  function backupStatusText() {
+    if (prefs.changes > 0 && prefs.lastBackup) return plural(prefs.changes, "change", "changes") + " since your last backup on " + fmtDate(prefs.lastBackup) + ".";
+    if (prefs.changes > 0) return "You haven't backed up this vault yet.";
+    if (prefs.lastBackup) return "Backed up on " + fmtDate(prefs.lastBackup) + ". No changes since then.";
+    return "You haven't backed up this vault yet.";
+  }
+  function renderNudge() {
+    var show = !S.demo && S.open && prefs.changes > 0 && S.accounts.length > 0 && prefs.nudgeHiddenAt !== prefs.changes;
+    $("#nudge").hidden = !show;
+    if (show) $("#nudgeText").textContent = backupStatusText() + " Save a fresh backup so you don't lose these keys if this browser's data is cleared.";
+  }
+  $("#nudgeBackup").addEventListener("click", function () { openBackup(); });
+  $("#nudgeLater").addEventListener("click", function () { prefs.nudgeHiddenAt = prefs.changes; savePrefs(); renderNudge(); });
+
   /* ---------- list ---------- */
+  var STAR = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 2.8l2.2 4.6 5 .6-3.7 3.5 1 5L10 14l-4.5 2.5 1-5L2.8 8l5-.6z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
   function buildRow(a) {
     var name = nameOf(a);
     var initial = (name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase();
@@ -370,29 +465,73 @@
     var digits = h("span", { class: "digits", text: "••• •••" });
     var next = h("span", { class: "next", hidden: true });
     var btn = h("button", { class: "code", type: "button", "aria-label": "Copy code for " + name }, digits, next);
+    var star = h("button", { class: "icon star" + (a.fav ? " on" : ""), type: "button", "aria-pressed": a.fav ? "true" : "false", "aria-label": "Favorite " + name });
+    star.innerHTML = STAR;
     var edit = h("button", { class: "icon edit", type: "button", "aria-label": "Edit " + name });
     edit.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
     var mono = h("span", { class: "mono", "aria-hidden": "true" }, initial);
     mono.style.setProperty("--h", String(hue(name)));
-    var el = h("li", { class: "row" },
-      mono,
-      h("div", { class: "who" }, h("span", { class: "issuer", text: name }), a.issuer && a.label ? h("span", { class: "label", text: a.label }) : null),
-      btn, ring, edit);
+    var who = h("div", { class: "who" }, h("span", { class: "issuer", text: name }));
+    var sub = [];
+    if (a.issuer && a.label) sub.push(h("span", { class: "label", text: a.label }));
+    if (a.group) sub.push(h("span", { class: "tag", text: a.group }));
+    if (sub.length) who.append(h("span", { class: "sub" }, sub[0], sub[1] || null));
+    var el = h("li", { class: "row" }, mono, who, btn, ring, star, edit);
     var r = {
       el: el, a: a, counter: -1, nextCounter: -1, code: "", urgent: false,
       digits: digits, next: next, sec: sec, arc: ring.querySelector(".arc")
     };
     btn.addEventListener("click", function () { copyCode(r); });
+    star.addEventListener("click", function () { toggleFav(a.id); });
     edit.addEventListener("click", function () { openEdit(a.id); });
     return r;
   }
 
+  async function toggleFav(id) {
+    var a = S.accounts.find(function (x) { return x.id === id; });
+    if (!a) return;
+    if (a.fav) delete a.fav; else a.fav = true;
+    await persist();
+    noteChange();
+    render();
+    var btn = document.querySelector('.row .star[aria-label="Favorite ' + CSS.escape(nameOf(a)) + '"]');
+    if (btn) btn.focus();
+    toast(a.fav ? nameOf(a) + " added to favorites" : nameOf(a) + " removed from favorites");
+  }
+
+  function matches(a, q) {
+    if (filter === "fav" && !a.fav) return false;
+    if (filter.indexOf("g:") === 0 && a.group !== filter.slice(2)) return false;
+    return !q || (a.issuer + " " + a.label + " " + (a.group || "")).toLowerCase().indexOf(q) >= 0;
+  }
+
+  function renderChips() {
+    var box = $("#chips");
+    var groups = groupsInUse();
+    var favs = S.accounts.some(function (a) { return a.fav; });
+    if (filter === "fav" && !favs) filter = "all";
+    if (filter.indexOf("g:") === 0 && groups.indexOf(filter.slice(2)) < 0) filter = "all";
+    box.replaceChildren();
+    if (!groups.length && !favs) { box.hidden = true; return; }
+    var make = function (id, text) {
+      var b = h("button", { class: "chip", type: "button", "aria-pressed": filter === id ? "true" : "false", text: text });
+      b.addEventListener("click", function () { filter = id; render(); var again = box.querySelector('[aria-pressed="true"]'); if (again) again.focus(); });
+      box.append(b);
+    };
+    make("all", "All");
+    if (favs) make("fav", "★ Favorites");
+    groups.forEach(function (g) { make("g:" + g, g); });
+    box.hidden = false;
+  }
+
   function render() {
     var q = $("#q").value.trim().toLowerCase();
+    renderChips();
     var all = S.accounts.slice().sort(function (x, y) {
-      return nameOf(x).toLowerCase().localeCompare(nameOf(y).toLowerCase()) || x.label.toLowerCase().localeCompare(y.label.toLowerCase());
+      return (y.fav ? 1 : 0) - (x.fav ? 1 : 0) ||
+        nameOf(x).toLowerCase().localeCompare(nameOf(y).toLowerCase()) || x.label.toLowerCase().localeCompare(y.label.toLowerCase());
     });
-    var list = all.filter(function (a) { return !q || (a.issuer + " " + a.label).toLowerCase().indexOf(q) >= 0; });
+    var list = all.filter(function (a) { return matches(a, q); });
     var ul = $("#list");
     ul.replaceChildren();
     rows.clear();
@@ -400,7 +539,9 @@
     ul.hidden = list.length === 0;
     $("#empty").hidden = S.accounts.length > 0;
     $("#noMatch").hidden = !(S.accounts.length > 0 && list.length === 0);
-    $("#count").textContent = S.accounts.length + (S.accounts.length === 1 ? " key" : " keys") + " · click a code to copy it";
+    $("#count").textContent = plural(S.accounts.length, "key", "keys") + (S.accounts.length ? " · click a code to copy it" : "");
+    $("#btnBackup").disabled = S.demo;
+    $("#btnBackup").title = S.demo ? "Backups are off in the demo" : "";
     renderFoot();
     tick();
   }
@@ -408,8 +549,12 @@
   function renderFoot() {
     var foot = $("#foot");
     foot.replaceChildren();
+    if (S.demo) {
+      foot.append(h("span", { text: "Demo vault: public test keys, kept in memory only." }));
+      return;
+    }
     foot.append(h("span", { text: "Codes are calculated on this device. Your keys stay here, encrypted." }));
-    var b = h("button", { class: "linkbtn", type: "button", text: prefs.lastBackup ? "Last backup " + fmtDate(prefs.lastBackup) : "No backup yet. Make one" });
+    var b = h("button", { class: "linkbtn", type: "button", text: prefs.changes > 0 ? (prefs.lastBackup ? plural(prefs.changes, "change", "changes") + " since last backup" : "No backup yet. Make one") : prefs.lastBackup ? "Last backup " + fmtDate(prefs.lastBackup) : "No backup yet. Make one" });
     b.addEventListener("click", openBackup);
     foot.append(b);
   }
@@ -418,7 +563,7 @@
     if (!r.code) return;
     try {
       await navigator.clipboard.writeText(r.code);
-      toast("Copied " + groupCode(r.code));
+      toast("Copied " + groupCode(r.code) + " for " + nameOf(r.a));
     } catch (e) {
       var rg = document.createRange();
       rg.selectNodeContents(r.digits);
@@ -431,6 +576,17 @@
   }
 
   $("#q").addEventListener("input", render);
+  $("#q").addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && $("#q").value) { ev.preventDefault(); $("#q").value = ""; render(); }
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "/" || ev.ctrlKey || ev.metaKey || ev.altKey || appView.hidden) return;
+    var t = ev.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (document.querySelector("dialog[open]")) return;
+    ev.preventDefault();
+    $("#q").focus();
+  });
 
   /* ---------- ticking ---------- */
   var heroKey = null, heroCounter = -1;
@@ -442,7 +598,7 @@
     var counter = Math.floor(sec / 30);
     if (heroCounter !== counter) {
       heroCounter = counter;
-      if (!heroKey) heroKey = await hmacKey(base32Decode(DEMO), "SHA1");
+      if (!heroKey) heroKey = await hmacKey(base32Decode(HERO_KEY), "SHA1");
       $("#heroCode").textContent = groupCode(await hotpFromKey(heroKey, counter, 6));
     }
   }
@@ -460,7 +616,7 @@
       r.counter = counter;
       key = await keyFor(a);
       var code = await hotpFromKey(key, counter, a.digits);
-      if (!S.key || r.counter !== counter) return;
+      if (!S.open || r.counter !== counter) return;
       r.code = code;
       r.digits.textContent = groupCode(code);
     }
@@ -471,7 +627,7 @@
       r.nextCounter = counter + 1;
       key = key || await keyFor(a);
       var nc = await hotpFromKey(key, counter + 1, a.digits);
-      if (!S.key) return;
+      if (!S.open) return;
       r.next.textContent = "next " + groupCode(nc);
       r.next.hidden = false;
     }
@@ -513,9 +669,11 @@
     try {
       var now = Date.now();
       await heroTick(now);
-      if (!S.key) return;
+      if (!S.open) return;
       if (prefs.autolock > 0 && now - lastActive > prefs.autolock * 60000) {
-        lock("Locked after " + prefs.autolock + (prefs.autolock === 1 ? " minute" : " minutes") + " of inactivity.");
+        var wasDemo = S.demo;
+        if (wasDemo) exitDemo("The demo closed after " + plural(prefs.autolock, "minute", "minutes") + " without activity.");
+        else lock("Locked after " + plural(prefs.autolock, "minute", "minutes") + " without activity.");
         return;
       }
       var all = [];
@@ -530,15 +688,24 @@
   });
 
   /* ---------- add ---------- */
+  var TABS = { key: ["#tabKey", "#keyForm"], link: ["#tabLink", "#linkForm"], mig: ["#tabMig", "#migPanel"] };
   function setTab(which) {
-    var key = which === "key";
-    $("#tabKey").setAttribute("aria-selected", String(key));
-    $("#tabLink").setAttribute("aria-selected", String(!key));
-    $("#keyForm").hidden = !key;
-    $("#linkForm").hidden = key;
+    Object.keys(TABS).forEach(function (k) {
+      $(TABS[k][0]).setAttribute("aria-selected", String(k === which));
+      $(TABS[k][0]).tabIndex = k === which ? 0 : -1;
+      $(TABS[k][1]).hidden = k !== which;
+    });
   }
   $("#tabKey").addEventListener("click", function () { setTab("key"); });
   $("#tabLink").addEventListener("click", function () { setTab("link"); });
+  $("#tabMig").addEventListener("click", function () { setTab("mig"); });
+  $(".tabs").addEventListener("keydown", function (ev) {
+    if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+    var order = ["key", "link", "mig"];
+    var cur = order.findIndex(function (k) { return $(TABS[k][0]).getAttribute("aria-selected") === "true"; });
+    var nxt = order[(cur + (ev.key === "ArrowRight" ? 1 : order.length - 1)) % order.length];
+    setTab(nxt); $(TABS[nxt][0]).focus(); ev.preventDefault();
+  });
 
   var entrySeq = 0, prevCache = new WeakMap();
   function entries() { return Array.prototype.slice.call($("#entries").children); }
@@ -557,13 +724,15 @@
         '<div class="field"><label for="' + id("i") + '">Service</label><input id="' + id("i") + '" class="k-issuer" maxlength="80" placeholder="GitHub" spellcheck="false" autocorrect="off" autocapitalize="off"></div>' +
         '<div class="field"><label for="' + id("l") + '">Account</label><input id="' + id("l") + '" class="k-label" maxlength="120" placeholder="you@example.com" spellcheck="false" autocorrect="off" autocapitalize="off"></div>' +
       '</div>' +
-      '<div class="field"><label for="' + id("s") + '">Setup key</label><input id="' + id("s") + '" class="k-secret mono-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="JBSW Y3DP EHPK 3PXP or an otpauth:// link"></div>' +
+      '<div class="field"><label for="' + id("s") + '">Setup key</label><input id="' + id("s") + '" class="k-secret mono-in" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" placeholder="JBSW Y3DP EHPK 3PXP or an otpauth:// link"></div>' +
       '<p class="prev" hidden></p>' +
       '<details><summary>Advanced</summary><div class="row2">' +
         '<div class="field"><label for="' + id("a") + '">Algorithm</label><select id="' + id("a") + '" class="k-algo"><option>SHA1</option><option>SHA256</option><option>SHA512</option></select></div>' +
         '<div class="field"><label for="' + id("d") + '">Digits</label><select id="' + id("d") + '" class="k-digits"><option>6</option><option>7</option><option>8</option></select></div>' +
         '<div class="field"><label for="' + id("p") + '">Seconds</label><input id="' + id("p") + '" class="k-period" type="number" min="1" max="300" value="30" inputmode="numeric"></div>' +
-      '</div></details>' +
+      '</div>' +
+      '<div class="field"><label for="' + id("g") + '">Group (optional)</label><input id="' + id("g") + '" class="k-group" maxlength="40" list="groupList" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="Work, Personal…"></div>' +
+      '</details>' +
       '<p class="err entry-err" role="alert"></p>';
     fld(li, ".rm").addEventListener("click", function () { removeEntry(li); });
     fld(li, ".k-secret").addEventListener("input", function () {
@@ -608,7 +777,15 @@
   }
   function fillFromLink(li) {
     var inp = fld(li, ".k-secret"), raw = inp.value.trim();
-    if (!/^otpauth(-migration)?:\/\//i.test(raw)) return;
+    if (isMigrationUri(raw)) {
+      inp.value = "";
+      openAdd("mig");
+      $("#migText").value = raw;
+      $("#migText").closest("details").open = true;
+      readMigrationText();
+      return;
+    }
+    if (!/^otpauth:\/\//i.test(raw)) return;
     try {
       var p = parseOtpauth(raw);
       inp.value = normSecret(p.secret);
@@ -624,18 +801,34 @@
     }
   }
 
-  function openAdd() {
+  function fillGroupList() {
+    var dl = $("#groupList");
+    dl.replaceChildren();
+    groupsInUse().forEach(function (g) { dl.append(h("option", { value: g })); });
+  }
+
+  function openAdd(tab) {
     $("#linkForm").reset();
     $("#keyErr").textContent = ""; $("#linkErr").textContent = "";
     resetEntries();
-    setTab("key");
+    resetMigration();
+    fillGroupList();
+    setTab(tab || "key");
     openDlg($("#addDlg"));
-    setTimeout(function () { var f = $("#entries .k-issuer"); if (f) f.focus(); }, 0);
+    if (!tab || tab === "key") setTimeout(function () { var f = $("#entries .k-issuer"); if (f) f.focus(); }, 0);
   }
-  $("#btnAdd").addEventListener("click", openAdd);
-  $("#emptyAdd").addEventListener("click", openAdd);
+  $("#btnAdd").addEventListener("click", function () { openAdd("key"); });
+  $("#emptyAdd").addEventListener("click", function () { openAdd("key"); });
+  $("#emptyImport").addEventListener("click", function () { openAdd("mig"); });
   $("#addClose").addEventListener("click", function () { $("#addDlg").close(); });
   $("#addEntry").addEventListener("click", addEntry);
+
+  async function addAccounts(batch) {
+    Array.prototype.push.apply(S.accounts, batch);
+    await persist();
+    noteChange(batch.length);
+    render();
+  }
 
   $("#keyForm").addEventListener("submit", async function (ev) {
     ev.preventDefault();
@@ -648,16 +841,14 @@
       if (isBlank(li)) return;
       try {
         var raw = fld(li, ".k-secret").value.trim();
-        if (/^otpauth/i.test(raw)) parseOtpauth(raw);
+        if (/^otpauth:/i.test(raw)) parseOtpauth(raw);
         var a = makeAccount({
           issuer: fld(li, ".k-issuer").value, label: fld(li, ".k-label").value, secret: raw,
-          algo: fld(li, ".k-algo").value, digits: fld(li, ".k-digits").value, period: fld(li, ".k-period").value
+          algo: fld(li, ".k-algo").value, digits: fld(li, ".k-digits").value, period: fld(li, ".k-period").value,
+          group: fld(li, ".k-group").value
         });
         if (isDup(a)) throw uerr("This key is already in your vault.");
-        var twice = batch.some(function (b) {
-          return b.secret === a.secret && b.algo === a.algo && b.digits === a.digits && b.period === a.period;
-        });
-        if (twice) throw uerr("This key is entered twice above.");
+        if (batch.some(function (b) { return sameKey(b, a); })) throw uerr("This key is entered twice above.");
         batch.push(a);
       } catch (x) {
         e.textContent = x.user ? x.message : "This key couldn't be read.";
@@ -671,9 +862,7 @@
       return;
     }
     if (!batch.length) { err.textContent = "Enter a setup key to save."; return; }
-    Array.prototype.push.apply(S.accounts, batch);
-    await persist();
-    render();
+    await addAccounts(batch);
     $("#addDlg").close();
     toast(batch.length === 1 ? "Added " + nameOf(batch[0]) : "Added " + batch.length + " keys");
   });
@@ -683,38 +872,48 @@
     var err = $("#linkErr"); err.textContent = "";
     var lines = $("#lLinks").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
     if (!lines.length) { err.textContent = "Paste at least one otpauth:// link."; return; }
-    var added = 0, dups = 0, problems = [];
+    var mig = lines.filter(isMigrationUri);
+    if (mig.length) {
+      $("#migText").value = mig.join("\n");
+      $("#lLinks").value = lines.filter(function (l) { return !isMigrationUri(l); }).join("\n");
+      setTab("mig");
+      $("#migText").closest("details").open = true;
+      readMigrationText();
+      return;
+    }
+    var batch = [], dups = 0, problems = [];
     lines.forEach(function (ln) {
       try {
         var a = makeAccount(parseOtpauth(ln));
-        if (isDup(a)) { dups++; return; }
-        S.accounts.push(a); added++;
+        if (isDup(a) || batch.some(function (b) { return sameKey(b, a); })) { dups++; return; }
+        batch.push(a);
       } catch (e) {
         var m = e.user ? e.message : "One link could not be read.";
         if (problems.indexOf(m) < 0) problems.push(m);
       }
     });
-    if (added) { await persist(); render(); toast("Added " + added + (added === 1 ? " key" : " keys")); }
-    if (dups) problems.unshift(dups + (dups === 1 ? " key is" : " keys are") + " already in your vault.");
+    if (batch.length) { await addAccounts(batch); toast("Added " + plural(batch.length, "key", "keys")); }
+    if (dups) problems.unshift(plural(dups, "key is", "keys are") + " already in your vault.");
     if (problems.length) err.textContent = problems.join(" ");
     else $("#addDlg").close();
   });
 
   function decodeQr(file) {
     return new Promise(function (resolve, reject) {
-      if (typeof jsQR !== "function") { reject(uerr("QR reading isn't available here. Paste the otpauth:// link instead.")); return; }
+      if (typeof jsQR !== "function") { reject(uerr("QR reading isn't available here. Paste the link instead.")); return; }
       var img = new Image();
       var url = URL.createObjectURL(file);
       img.onload = function () {
-        var sc = Math.min(1, 1400 / Math.max(img.width, img.height));
+        var sc = Math.min(1, 1600 / Math.max(img.width, img.height));
         var w = Math.max(1, Math.round(img.width * sc)), hh = Math.max(1, Math.round(img.height * sc));
         var cv = document.createElement("canvas");
         cv.width = w; cv.height = hh;
         var ctx = cv.getContext("2d", { willReadFrequently: true });
         ctx.drawImage(img, 0, 0, w, hh);
         var res = jsQR(ctx.getImageData(0, 0, w, hh).data, w, hh, { inversionAttempts: "attemptBoth" });
+        cv.width = cv.height = 0;
         URL.revokeObjectURL(url);
-        if (res && res.data) resolve(res.data); else reject(uerr("No QR code found in that image. Try a sharper, closer screenshot."));
+        if (res && res.data) resolve(res.data); else reject(uerr("No QR code found in that image. Try a sharper, closer picture."));
       };
       img.onerror = function () { URL.revokeObjectURL(url); reject(uerr("That file couldn't be opened as an image.")); };
       img.src = url;
@@ -731,17 +930,146 @@
     for (var i = 0; i < files.length; i++) {
       try { found.push(await decodeQr(files[i])); } catch (e) { missed.push(files[i].name); }
     }
+    var mig = found.filter(isMigrationUri);
+    if (mig.length) {
+      setTab("mig");
+      mig.forEach(function (u) { addMigrationUri(u); });
+      showMigrationReview();
+      found = found.filter(function (u) { return !isMigrationUri(u); });
+    }
     if (found.length) {
       var ta = $("#lLinks");
       ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + found.join("\n");
     }
-    if (missed.length) err.textContent = "No QR code found in " + missed.join(", ") + ". Try a sharper, closer screenshot.";
+    if (missed.length) err.textContent = "No QR code found in " + missed.join(", ") + ". Try a sharper, closer picture.";
   });
 
-  $("#emptyDemo").addEventListener("click", async function () {
-    var a = makeAccount({ issuer: "Example", label: "RFC 6238 test key (safe to delete)", secret: DEMO });
-    if (!isDup(a)) { S.accounts.push(a); await persist(); render(); }
+  /* ---------- Google Authenticator import ---------- */
+  var mig = MigrationCollector();
+  var migPlan = [];
+  function resetMigration() {
+    mig.clear(); migPlan = [];
+    $("#migStart").hidden = false; $("#migReview").hidden = true; $("#migDone").hidden = true;
+    $("#migErr").textContent = ""; $("#migParts").textContent = "";
+    $("#migRows").replaceChildren();
+    var f = $("#migFile"); if (f) f.value = "";
+  }
+  function addMigrationUri(u) {
+    try {
+      var r = mig.add(u);
+      return { ok: true, r: r };
+    } catch (e) {
+      return { ok: false, msg: e.user ? e.message : "That export couldn't be read." };
+    }
+  }
+  function partsSummary() {
+    var singles = 0, parts = [];
+    mig.batches().forEach(function (b) {
+      if (b.batchSize === 1) { singles++; return; }
+      var got = b.batchSize - b.missing.length;
+      parts.push("read " + got + " of " + b.batchSize + " codes from a multi-code export" + (b.missing.length ? " (missing code " + b.missing.map(function (i) { return i + 1; }).join(", ") + ")" : ""));
+    });
+    if (singles) parts.unshift("read " + plural(singles, "single-code export", "single-code exports"));
+    var t = parts.join("; ");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  $("#migFile").addEventListener("change", async function (ev) {
+    var files = Array.prototype.slice.call(ev.target.files || []);
+    ev.target.value = "";
+    if (!files.length) return;
+    var err = $("#migErr"); err.textContent = "";
+    var problems = [];
+    for (var i = 0; i < files.length; i++) {
+      var text;
+      try { text = await decodeQr(files[i]); }
+      catch (e) { problems.push(files[i].name + ": " + (e.user ? e.message : "couldn't be read")); continue; }
+      if (!isMigrationUri(text)) {
+        problems.push(files[i].name + ": this QR code isn't a Google Authenticator export. Use the \"Links or QR images\" tab for single accounts.");
+        continue;
+      }
+      var res = addMigrationUri(text);
+      if (!res.ok) problems.push(files[i].name + ": " + res.msg);
+    }
+    if (problems.length) err.textContent = problems.join(" ");
+    if (mig.size) showMigrationReview();
   });
+  function readMigrationText() {
+    var err = $("#migErr"); err.textContent = "";
+    var lines = $("#migText").value.split(/\s+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!lines.length) { err.textContent = "Paste at least one otpauth-migration:// link."; return; }
+    var problems = [];
+    lines.forEach(function (l, i) {
+      if (!isMigrationUri(l)) { problems.push("Line " + (i + 1) + " isn't a Google Authenticator export link."); return; }
+      var r = addMigrationUri(l);
+      if (!r.ok) problems.push("Line " + (i + 1) + ": " + r.msg);
+    });
+    if (problems.length) err.textContent = problems.join(" ");
+    if (mig.size) showMigrationReview();
+  }
+  $("#migRead").addEventListener("click", readMigrationText);
+
+  function showMigrationReview() {
+    var list = mig.entries();
+    var seen = [];
+    migPlan = list.map(function (e, idx) {
+      var item = { e: e, idx: idx, status: "", ok: false, account: null };
+      if (!e.supported) { item.status = "Not supported: " + e.reason + ". It won't be imported."; return item; }
+      var a;
+      try { a = makeAccount({ issuer: e.issuer, label: e.label, secret: e.secret, algo: e.algo, digits: e.digits, period: e.period }); }
+      catch (x) { item.status = "Can't import: " + (x.user ? x.message : "invalid key"); return item; }
+      if (isDup(a)) { item.status = "Already in your vault"; return item; }
+      if (seen.some(function (b) { return sameKey(b, a); })) { item.status = "Appears twice in this export"; return item; }
+      seen.push(a);
+      item.ok = true; item.account = a;
+      item.status = "Ready" + (a.algo !== "SHA1" || a.digits !== 6 ? " (" + a.algo + ", " + a.digits + " digits)" : "");
+      return item;
+    });
+    var tbody = $("#migRows");
+    tbody.replaceChildren();
+    migPlan.forEach(function (it) {
+      var cb = h("input", { type: "checkbox", id: "mig" + it.idx, "aria-label": "Import " + (it.e.issuer || it.e.label) });
+      cb.checked = it.ok; cb.disabled = !it.ok;
+      cb.addEventListener("change", updateMigButton);
+      it.cb = cb;
+      tbody.append(h("tr", { class: it.ok ? "" : "skipped" },
+        h("td", null, cb),
+        h("td", null, h("label", { for: "mig" + it.idx, text: it.e.issuer || "—" })),
+        h("td", { text: it.e.label || "—" }),
+        h("td", { class: "st", text: it.status })));
+    });
+    var ready = migPlan.filter(function (i) { return i.ok; }).length;
+    var skipped = migPlan.length - ready;
+    $("#migSummary").textContent = partsSummary() + ". Found " + plural(migPlan.length, "account", "accounts") + ": " + ready + " ready to import" + (skipped ? ", " + skipped + " will be skipped" : "") + ". Nothing has been saved yet.";
+    var missing = mig.batches().filter(function (b) { return b.missing.length; });
+    $("#migMissing").hidden = !missing.length;
+    if (missing.length) $("#migMissing").textContent = "Some export codes haven't been read yet, so some accounts may be missing. Choose \"Scan more codes\" to add them, or import these now and the rest later. Accounts you've already imported won't be added twice.";
+    $("#migStart").hidden = true; $("#migReview").hidden = false; $("#migDone").hidden = true;
+    updateMigButton();
+    $("#migReviewTitle").focus();
+  }
+  function updateMigButton() {
+    var n = migPlan.filter(function (i) { return i.ok && i.cb && i.cb.checked; }).length;
+    $("#migImport").textContent = n ? "Import " + plural(n, "account", "accounts") : "Nothing selected";
+    $("#migImport").disabled = !n;
+  }
+  $("#migMore").addEventListener("click", function () {
+    $("#migReview").hidden = true; $("#migStart").hidden = false;
+    $("#migParts").textContent = partsSummary() + ".";
+    $("#migFile").focus();
+  });
+  $("#migCancel").addEventListener("click", function () { resetMigration(); $("#addDlg").close(); });
+  $("#migImport").addEventListener("click", async function () {
+    var batch = migPlan.filter(function (i) { return i.ok && i.cb.checked; }).map(function (i) { return i.account; })
+      .filter(function (a) { return !isDup(a); });
+    if (!batch.length) return;
+    await addAccounts(batch);
+    mig.clear(); migPlan = [];
+    $("#migDoneText").textContent = "Added " + plural(batch.length, "account", "accounts") + " to your vault" + (S.demo ? " (demo only, not saved)" : "") + ".";
+    $("#migReview").hidden = true; $("#migDone").hidden = false;
+    $("#migDoneClose").focus();
+  });
+  $("#migDoneClose").addEventListener("click", function () { $("#addDlg").close(); });
+  $("#migDoneBackup").addEventListener("click", function () { $("#addDlg").close(); if (!S.demo) openBackup(); });
 
   /* ---------- edit ---------- */
   var editId = null;
@@ -749,7 +1077,9 @@
     var a = S.accounts.find(function (x) { return x.id === id; });
     if (!a) return;
     editId = id;
+    fillGroupList();
     $("#eIssuer").value = a.issuer; $("#eLabel").value = a.label;
+    $("#eGroup").value = a.group || ""; $("#eFav").checked = !!a.fav;
     $("#eSpec").textContent = a.algo + " · " + a.digits + " digits · " + a.period + " second window · added " + fmtDate(a.added);
     $("#eSecret").hidden = true; $("#eSecret").textContent = "";
     $("#eReveal").textContent = "Show setup key";
@@ -770,8 +1100,12 @@
     if (!a) return;
     var issuer = $("#eIssuer").value.trim(), label = $("#eLabel").value.trim();
     if (!issuer && !label) { $("#editErr").textContent = "Enter a service name or an account."; return; }
+    var group = cleanGroup($("#eGroup").value), fav = $("#eFav").checked;
+    var changed = a.issuer !== issuer || a.label !== label || (a.group || "") !== group || !!a.fav !== fav;
     a.issuer = issuer; a.label = label;
-    await persist();
+    if (group) a.group = group; else delete a.group;
+    if (fav) a.fav = true; else delete a.fav;
+    if (changed) { await persist(); noteChange(); }
     render();
     $("#editDlg").close();
   });
@@ -781,6 +1115,7 @@
     S.accounts = S.accounts.filter(function (x) { return x.id !== editId; });
     keyCache.delete(editId);
     await persist();
+    noteChange();
     render();
     $("#editDlg").close();
     toast("Key deleted");
@@ -792,15 +1127,21 @@
     $("#sHidden").checked = prefs.lockHidden;
     $("#sErr").textContent = ""; $("#sOk").textContent = "";
     $("#sNew").value = ""; $("#sNew2").value = ""; $("#sErase").value = ""; $("#sEraseBtn").disabled = true;
+    $("#setDemoNote").hidden = !S.demo;
+    $("#setPass").hidden = S.demo;
+    $("#setErase").hidden = S.demo;
     openDlg($("#settingsDlg"));
   });
   $("#sLock").addEventListener("change", function () { prefs.autolock = Number($("#sLock").value); savePrefs(); lastActive = Date.now(); });
   $("#sHidden").addEventListener("change", function () { prefs.lockHidden = $("#sHidden").checked; savePrefs(); });
   document.addEventListener("visibilitychange", function () {
-    if (document.hidden && prefs.lockHidden && S.key) lock("Locked when you switched away.");
+    if (!document.hidden || !prefs.lockHidden || !S.open) return;
+    if (S.demo) exitDemo("The demo closed when you switched away.");
+    else lock("Locked when you switched away.");
   });
   $("#passForm").addEventListener("submit", async function (ev) {
     ev.preventDefault();
+    if (S.demo) return;
     var err = $("#sErr"), ok = $("#sOk");
     err.textContent = ""; ok.textContent = "";
     var p1 = $("#sNew").value;
@@ -810,26 +1151,40 @@
       S.key = await deriveKey(p1, salt, PBKDF_ITER);
       S.salt = salt; S.iter = PBKDF_ITER;
       await persist();
+      noteChange();
       $("#sNew").value = ""; $("#sNew2").value = "";
-      ok.textContent = "Passphrase changed. Make a new backup so it matches.";
+      ok.textContent = "Passphrase changed. Save a new backup: older backups still need the old passphrase.";
     } catch (e) { err.textContent = "Couldn't change the passphrase. Try again."; }
   });
-  $("#sErase").addEventListener("input", function () { $("#sEraseBtn").disabled = $("#sErase").value !== "ERASE"; });
+  $("#sErase").addEventListener("input", function () { $("#sEraseBtn").disabled = S.demo || $("#sErase").value !== "ERASE"; });
   $("#sEraseBtn").addEventListener("click", function () {
+    if (S.demo) return;
     lsDel(LS_VAULT);
     envelope = null; damaged = false;
+    prefs.changes = 0; prefs.lastBackup = 0; prefs.nudgeHiddenAt = -1; savePrefs();
     lock("Vault erased. Create a new one when you're ready.");
   });
 
   /* ---------- backup ---------- */
   function openBackup() {
+    if (S.demo) { toast("Backups are off in the demo. Create your vault to use them."); return; }
     $("#bText").value = envelope ? JSON.stringify(envelope, null, 2) : "";
-    $("#bErr").textContent = ""; $("#iErr").textContent = ""; $("#iOk").textContent = "";
-    $("#iText").value = ""; $("#iPass").value = ""; $("#iFile").value = "";
-    $("#bLast").textContent = prefs.lastBackup ? "Last backup: " + fmtDate(prefs.lastBackup) + "." : "You haven't made a backup yet.";
+    ["#bErr", "#iErr", "#iOk", "#cErr"].forEach(function (s) { $(s).textContent = ""; });
+    ["#iText", "#iPass", "#iFile", "#cText", "#cPass", "#cFile"].forEach(function (s) { $(s).value = ""; });
+    $("#cResult").hidden = true; $("#cResult").replaceChildren();
+    renderBackupStatus();
     openDlg($("#backupDlg"));
   }
-  function markBackup() { prefs.lastBackup = Date.now(); savePrefs(); renderFoot(); $("#bLast").textContent = "Last backup: " + fmtDate(prefs.lastBackup) + "."; }
+  function renderBackupStatus() {
+    var el = $("#bkStatus");
+    var stale = prefs.changes > 0 || !prefs.lastBackup;
+    el.className = "bk-status " + (stale ? "stale" : "fresh");
+    el.textContent = backupStatusText();
+  }
+  function markBackup() {
+    prefs.lastBackup = Date.now(); prefs.changes = 0; prefs.nudgeHiddenAt = -1;
+    savePrefs(); renderFoot(); renderNudge(); renderBackupStatus();
+  }
   $("#btnBackup").addEventListener("click", openBackup);
   $("#bSave").addEventListener("click", async function () {
     var text = $("#bText").value;
@@ -844,46 +1199,80 @@
       document.body.append(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
       markBackup();
-      toast("Backup saved");
+      toast("Backup downloaded. Check it below to be sure it opens.");
     } catch (e) {
-      $("#bErr").textContent = "Your browser blocked the download. Use Copy text and keep it somewhere safe.";
+      $("#bErr").textContent = "Your browser blocked the download. Use Copy backup text and keep it somewhere safe.";
     }
   });
   $("#bCopy").addEventListener("click", async function () {
     var ta = $("#bText");
     if (!ta.value) { $("#bErr").textContent = "There is nothing to back up yet."; return; }
     $("#bErr").textContent = "";
-    try { await navigator.clipboard.writeText(ta.value); markBackup(); toast("Backup text copied"); }
-    catch (e) { ta.focus(); ta.select(); $("#bErr").textContent = "Selected. Press Ctrl+C or ⌘C to copy it."; }
+    try { await navigator.clipboard.writeText(ta.value); markBackup(); toast("Backup text copied. Paste it somewhere safe."); }
+    catch (e) { ta.closest("details").open = true; ta.focus(); ta.select(); $("#bErr").textContent = "Selected. Press Ctrl+C or ⌘C to copy it."; }
   });
-  $("#iFile").addEventListener("change", async function (ev) {
-    var f = ev.target.files[0];
-    if (f) $("#iText").value = await f.text();
+  function fileInto(input, textarea) {
+    $(input).addEventListener("change", async function (ev) {
+      var f = ev.target.files[0];
+      if (f) $(textarea).value = await f.text();
+    });
+  }
+  fileInto("#iFile", "#iText");
+  fileInto("#cFile", "#cText");
+
+  /* Check a backup: decrypt in memory and compare. Never changes the vault or storage. */
+  $("#checkForm").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var err = $("#cErr"), out = $("#cResult");
+    err.textContent = ""; out.hidden = true; out.replaceChildren();
+    var env = readBackupText($("#cText").value);
+    if (!env) { err.textContent = "That doesn't look like a 2FA Keyring backup. Choose the .json file you downloaded, or paste its full text."; return; }
+    var r;
+    try { r = await openEnvelope(env, $("#cPass").value); }
+    catch (e) { err.textContent = "That passphrase doesn't open this backup. Try the passphrase you had when you made it."; return; }
+    var inBackup = sanitizeAccounts(r.data && r.data.accounts);
+    var notHere = inBackup.filter(function (a) { return !isDup(a); });
+    var notInBackup = S.accounts.filter(function (a) { return !inBackup.some(function (b) { return sameKey(b, a); }); });
+    var items = [h("p", { class: "good", text: "This backup opens with that passphrase and contains " + plural(inBackup.length, "key", "keys") + "." })];
+    if (r.data && Number.isFinite(r.data.savedAt)) items.push(h("p", { text: "It was made from a vault saved on " + fmtDate(r.data.savedAt) + "." }));
+    if (!notHere.length && !notInBackup.length) items.push(h("p", { text: "It matches your vault exactly." }));
+    if (notInBackup.length) items.push(h("p", { class: "warnline", text: plural(notInBackup.length, "key in your vault is", "keys in your vault are") + " not in this backup: " + notInBackup.map(nameOf).slice(0, 8).join(", ") + (notInBackup.length > 8 ? "…" : "") + ". Save a fresh backup to include them." }));
+    if (notHere.length) items.push(h("p", { text: plural(notHere.length, "key in this backup isn't", "keys in this backup aren't") + " in your vault: " + notHere.map(nameOf).slice(0, 8).join(", ") + (notHere.length > 8 ? "…" : "") + ". Use Merge below to add them." }));
+    items.push(h("p", { class: "muted", text: "Your vault wasn't changed." }));
+    items.forEach(function (n) { out.append(n); });
+    out.hidden = false;
+    $("#cPass").value = "";
   });
+
   $("#importForm").addEventListener("submit", async function (ev) {
     ev.preventDefault();
+    if (S.demo) return;
     var err = $("#iErr"), ok = $("#iOk");
     err.textContent = ""; ok.textContent = "";
-    var env;
-    try { env = checkEnvelope(JSON.parse($("#iText").value)); }
-    catch (e) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
+    var env = readBackupText($("#iText").value);
+    if (!env) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
     var r;
     try { r = await openEnvelope(env, $("#iPass").value); }
     catch (e) { err.textContent = "That passphrase doesn't open this backup."; return; }
-    var incoming = sanitizeAccounts(r.data.accounts), added = 0;
-    incoming.forEach(function (a) { if (!isDup(a)) { S.accounts.push(a); added++; } });
-    if (added) { await persist(); render(); $("#bText").value = envelope ? JSON.stringify(envelope, null, 2) : ""; }
-    ok.textContent = added ? "Merged " + added + (added === 1 ? " key." : " keys.") + (incoming.length - added ? " " + (incoming.length - added) + " were already here." : "")
+    var incoming = sanitizeAccounts(r.data.accounts), batch = [];
+    incoming.forEach(function (a) { if (!isDup(a) && !batch.some(function (b) { return sameKey(b, a); })) batch.push(a); });
+    if (batch.length) { await addAccounts(batch); $("#bText").value = envelope ? JSON.stringify(envelope, null, 2) : ""; renderBackupStatus(); }
+    ok.textContent = batch.length ? "Merged " + plural(batch.length, "key", "keys") + "." + (incoming.length - batch.length ? " " + (incoming.length - batch.length) + " were already here." : "")
       : "Nothing new to add. Every key in that backup is already in your vault.";
     $("#iPass").value = "";
   });
 
-  $("#btnLock").addEventListener("click", function () { lock("Vault locked."); });
+  $("#btnLock").addEventListener("click", function () {
+    if (S.demo) exitDemo("You left the demo. Nothing from it was saved.");
+    else lock("Vault locked.");
+  });
 
   /* ---------- boot ---------- */
   loadStored();
   showLock("");
   updateStorageNote(!storageOK);
+  if (location.hash === "#demo") enterDemo();
+  addEventListener("hashchange", function () { if (location.hash === "#demo" && !S.open) enterDemo(); });
   setInterval(tick, 250);
   tick();
 })();
