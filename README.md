@@ -2,6 +2,7 @@
 
 A free, open-source authenticator that runs in your browser. It shows live two-factor (TOTP) codes for all your accounts and keeps every key encrypted on your own device, behind a passphrase only you know. There's no account, no server and no tracking.
 
+- **Live site:** <https://2fa-keyring.com>
 - **Website:** `index.html`
 - **App:** `app/`
 - **Security model:** [`security.html`](security.html) · **Reporting:** [`SECURITY.md`](SECURITY.md)
@@ -42,13 +43,14 @@ _headers            Security headers for Cloudflare hosting
 wrangler.jsonc      Cloudflare Workers static-assets config
 .assetsignore       Repository files that aren't deployed to Cloudflare
 .github/workflows/  Automatic, verified deploy to Cloudflare
+.well-known/        security.txt (RFC 9116)
 ```
 
 ## Publishing
 
 The site is plain static files, so it can be hosted in two ways. Cloudflare is recommended because it gives the app its own origin and real security headers.
 
-### Cloudflare Workers (recommended): `https://2fa-keyring.estuty777.workers.dev`
+### Cloudflare Workers: `https://2fa-keyring.com` (the official site)
 
 `wrangler.jsonc`, `_headers` and a GitHub Actions workflow (`.github/workflows/deploy-cloudflare.yml`) are already in the repository. To turn on automatic deploys:
 
@@ -69,7 +71,7 @@ Cloudflare then sends the headers in `_headers` with every file:
 - **A Permissions-Policy** that turns off camera, microphone, location and similar features
 - **Cross-origin isolation headers** (`Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy`)
 
-The `2fa-keyring.` subdomain is used only by this app, so no other site shares its storage.
+`2fa-keyring.com` is used only by this app, so no other site shares its storage. `wrangler.jsonc` keeps the `workers.dev` address turned off, and `www.2fa-keyring.com` should redirect to the apex domain (Cloudflare → Rules → Redirect Rules), so every user has exactly one vault location.
 
 You can also deploy from your computer with `npx wrangler deploy` in the repository folder.
 

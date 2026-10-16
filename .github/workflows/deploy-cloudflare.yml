@@ -1,4 +1,4 @@
-# Deploys the static site to Cloudflare Workers (2fa-keyring.<subdomain>.workers.dev)
+# Deploys the static site to Cloudflare Workers (served at https://2fa-keyring.com)
 # on every push to main, then checks that the security headers are live.
 #
 # Needs two repository secrets (Settings → Secrets and variables → Actions):
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SITE_URL: https://2fa-keyring.estuty777.workers.dev
+      SITE_URL: https://2fa-keyring.com
     steps:
       - name: Check for Cloudflare credentials
         id: creds
@@ -88,6 +88,12 @@ jobs:
           for f in README.md SECURITY.md wrangler.jsonc _headers .assetsignore .github/workflows/deploy-cloudflare.yml; do
             check "/$f is not served" test "$(code "/$f")" = 404 || fail=1
           done
+          check "security.txt is published" test "$(code /.well-known/security.txt)" = 200 || fail=1
+          www=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' https://www.2fa-keyring.com/app/)
+          case "$www" in
+            30[1278]" https://2fa-keyring.com/"*) echo "ok: www redirects to 2fa-keyring.com" ;;
+            *) echo "::warning::www.2fa-keyring.com does not redirect to https://2fa-keyring.com (got: $www). It serves a separate copy with its own vault." ;;
+          esac
           for p in / /app/ /security /privacy /terms; do
             check "$p loads" test "$(code "$p")" = 200 || fail=1
           done

@@ -1,0 +1,5 @@
+Contact: https://github.com/estuty/2FA-Keyring/security/advisories/new
+Expires: 2027-10-16T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://2fa-keyring.com/.well-known/security.txt
+Policy: https://2fa-keyring.com/security#report

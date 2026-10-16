@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://2fa-keyring.com/security">
 <title>2FA Keyring Security</title>
 <meta name="description" content="How 2FA Keyring protects your two-factor keys: threat model, cryptography, Content Security Policy, hosting, and how to verify it yourself.">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
@@ -92,7 +93,7 @@
       <h2 id="host">What the host and your browser can see</h2>
       <p>The app never sends your keys, passphrase, account names or codes anywhere. Some things outside the app's control are worth knowing:</p>
       <ul>
-        <li><b>The host's request logs.</b> Loading any website tells its host your IP address, browser type, the time and which files were requested. That's GitHub on github.io, or Cloudflare on workers.dev. These requests carry nothing you type or store in the app.</li>
+        <li><b>The host's request logs.</b> Loading any website tells its host your IP address, browser type, the time and which files were requested. For <code>2fa-keyring.com</code>, that's Cloudflare. These requests carry nothing you type or store in the app.</li>
         <li><b>Browser spell check and translation.</b> Some browsers can send text you type to a cloud service, such as Chrome's enhanced spell check or Edge's Microsoft Editor, or translate a page through an online service. The app turns spell check, autocorrect and translation off for all its fields, so service names, accounts and keys aren't sent this way.</li>
         <li><b>Password managers.</b> Your browser may offer to save your vault passphrase. If you accept and your browser syncs passwords, the passphrase is protected by that account. Decide whether that's what you want.</li>
         <li><b>Clipboard history.</b> A copied code can be kept by clipboard history or cloud clipboard sync (for example Windows' <kbd>Win</kbd>+<kbd>V</kbd> history). Codes expire within their period, but turn off clipboard sync if this matters to you.</li>
@@ -135,12 +136,9 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
       <p>Browsers ignore <code>frame-ancestors</code> in a meta tag, which is why the app checks for framing itself. If you host your own copy, also send the policy as an HTTP header with <code>frame-ancestors 'none'</code>.</p>
 
       <h2 id="hosting">Hosting and origin</h2>
-      <p>Browser storage is shared by every page on the same origin (scheme, host and port), so where the app is hosted matters.</p>
-      <div class="callout warn">
-        <b>On GitHub Pages, the origin is shared</b>
-        <p>All project sites under one <code>username.github.io</code> share an origin. Any other site published from the same GitHub account could read the encrypted vault, or script an open copy of the app. For strong isolation, serve the app from its own domain or subdomain, such as <code>2fa.example.com</code>, used for nothing else.</p>
-      </div>
-      <p>When the site is served from Cloudflare, at <code>2fa-keyring.estuty777.workers.dev</code> or your own domain, it has an origin of its own. Cloudflare also sends HTTP security headers with every file:</p>
+      <p>The official site is <b><code>2fa-keyring.com</code></b>, served by Cloudflare as static files. Browser storage belongs to a single origin (scheme, host and port), so this domain is used for nothing but this app, and no other website can read its storage.</p>
+      <p>Other addresses redirect to <code>https://2fa-keyring.com</code>, so every user has exactly one vault location. Always check the address bar shows <code>2fa-keyring.com</code> before entering your passphrase.</p>
+      <p>Cloudflare sends these HTTP security headers with every file:</p>
       <ul>
         <li><b>Content Security Policy:</b> the same policy as an HTTP header, plus <code>frame-ancestors 'none'</code> so no other site can frame the app</li>
         <li><b>HTTPS only:</b> <code>Strict-Transport-Security</code> keeps browsers on HTTPS</li>
@@ -148,7 +146,11 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
         <li><b>Device features off:</b> a <code>Permissions-Policy</code> that turns off the camera, microphone, location and similar features</li>
         <li><b>Cross-origin isolation:</b> <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Resource-Policy</code> isolate the page from other websites</li>
       </ul>
-      <p>On GitHub Pages, every file is served over HTTPS, but custom headers aren't supported. There, the site relies on each page's meta policy and the app's own framing check. Turn on "Enforce HTTPS" in the repository's Pages settings.</p>
+      <p>Every deploy is followed by an automatic check of the live site that these headers are present and that no repository files are served.</p>
+      <div class="callout warn">
+        <b>If you host your own copy</b>
+        <p>Give it a domain or subdomain of its own. Avoid shared origins such as <code>username.github.io</code>, where every project site of that account shares one origin and could read or script your copy. GitHub Pages also can't send security headers, so a copy there relies only on each page's meta policy and the app's own framing check.</p>
+      </div>
 
       <h2 id="backups">Backups</h2>
       <ul>
