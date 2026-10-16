@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>2FA Keyring Security</title>
+<meta name="description" content="How 2FA Keyring protects your two-factor keys: threat model, cryptography, Content Security Policy, hosting, and how to verify it yourself.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="./#how">How it works</a>
+      <a href="security.html" aria-current="page">Security</a>
+      <a class="hide-sm" href="./#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener">Source</a>
+      <a class="btn primary small" href="app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker">Security model</p>
+      <h1>How your keys are protected</h1>
+      <p class="lead">This page explains what 2FA Keyring does with your two-factor keys, which attacks it defends against, where its limits are, and how to check every claim yourself.</p>
+      <p class="meta">Applies to the version of the app served from this site · Source: github.com/estuty/2FA-Keyring</p>
+    </div>
+  </div>
+
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#summary">Summary</a>
+      <a href="#threats">Threat model</a>
+      <a href="#crypto">Cryptography</a>
+      <a href="#storage">Storage and memory</a>
+      <a href="#csp">Content Security Policy</a>
+      <a href="#hosting">Hosting and origin</a>
+      <a href="#backups">Backups</a>
+      <a href="#verify">Verify it yourself</a>
+      <a href="#selfhost">Run your own copy</a>
+      <a href="#advice">Recommendations</a>
+      <a href="#report">Report a vulnerability</a>
+    </nav>
+
+    <article class="prose">
+      <h2 id="summary">Summary</h2>
+      <ul>
+        <li>The app is a static website. There's no server-side code, database, account system, cookies or analytics.</li>
+        <li>Your keys are encrypted with <b>AES-256-GCM</b> under a key derived from your passphrase with <b>PBKDF2-SHA256 and 600,000 iterations</b>. Only the encrypted vault is written to storage.</li>
+        <li>The encrypted vault lives in your browser's <code>localStorage</code> on your device. It is never uploaded.</li>
+        <li>A strict <b>Content Security Policy</b> blocks all network connections from the app and allows scripts, styles and fonts only from this site.</li>
+        <li>All cryptography uses the browser's built-in <b>Web Crypto API</b>. There's no custom encryption code.</li>
+      </ul>
+
+      <h2 id="threats">Threat model</h2>
+      <h3>Defended</h3>
+      <ul>
+        <li><b>Theft of the stored vault or a backup file.</b> Without the passphrase it's AES-GCM ciphertext. Guessing is slowed by 600,000 PBKDF2 rounds per attempt, and the app rejects passphrases shorter than 12 characters or ones that are easy to guess.</li>
+        <li><b>Tampering with the stored vault or a backup.</b> AES-GCM authenticates the data, so any modified byte makes decryption fail instead of producing altered keys.</li>
+        <li><b>Server breach or data collection.</b> There's no server holding user data, and the app cannot make network requests.</li>
+        <li><b>Third-party script compromise.</b> No CDN, tag manager or third-party script is loaded. The QR decoder (jsQR, Apache-2.0) and the fonts (SIL OFL) are served from this site.</li>
+        <li><b>Clickjacking.</b> The app refuses to run when it's loaded inside a frame.</li>
+        <li><b>Unattended unlocked sessions.</b> The vault auto-locks after inactivity (default 5 minutes) and can lock as soon as you switch tabs. Locking drops the decrypted keys and the encryption key from the page.</li>
+        <li><b>Insecure connections.</b> The app refuses to run outside a secure context (HTTPS or localhost).</li>
+      </ul>
+      <h3>Not defended</h3>
+      <ul>
+        <li><b>A compromised device.</b> Malware, a malicious browser extension or someone with control of your unlocked session can read what the page shows. This applies to every software authenticator.</li>
+        <li><b>A weak or reused passphrase.</b> If an attacker has your encrypted vault and can guess your passphrase, they get your keys.</li>
+        <li><b>Malicious changes to the code itself.</b> If whoever controls this site or its repository published altered code, the next visit would run it. Run your own copy if you don't want to rely on that (see <a href="#selfhost">below</a>).</li>
+        <li><b>Phishing of the codes themselves.</b> A one-time code typed into a fake login page can be relayed by an attacker within its 30-second window. For your most important accounts, prefer hardware security keys or passkeys, which resist phishing.</li>
+      </ul>
+      <div class="callout warn">
+        <b>Two-factor keys are a second factor</b>
+        <p>Keeping your TOTP keys in the same place as your passwords reduces the benefit of two-factor authentication. Use 2FA Keyring separately from your password manager where you can.</p>
+      </div>
+
+      <h2 id="crypto">Cryptography</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Purpose</th><th>Algorithm</th><th>Parameters</th></tr></thead>
+          <tbody>
+            <tr><td>Key derivation</td><td>PBKDF2 with HMAC-SHA-256</td><td>600,000 iterations, 16-byte random salt per vault, 256-bit output</td></tr>
+            <tr><td>Vault encryption</td><td>AES-GCM</td><td>256-bit key, new 12-byte random IV on every save, 128-bit authentication tag</td></tr>
+            <tr><td>Code generation</td><td>HOTP / TOTP (RFC 4226, RFC 6238)</td><td>HMAC-SHA-1, SHA-256 or SHA-512, 6–8 digits, 1–300 second period</td></tr>
+            <tr><td>Randomness</td><td><code>crypto.getRandomValues</code></td><td>The browser's cryptographically secure generator</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The derived AES key is created as non-extractable, so page scripts can use it but cannot read its bytes. The iteration count matches the current OWASP recommendation for PBKDF2-SHA256. The TOTP code is tested against all 18 test vectors published in RFC 6238.</p>
+
+      <h2 id="storage">Storage and memory</h2>
+      <ul>
+        <li><b>On disk:</b> one <code>localStorage</code> entry holds the encrypted vault: format version, salt, iteration count, IV and ciphertext. A second entry holds non-secret preferences (auto-lock time, last backup date).</li>
+        <li><b>In memory while unlocked:</b> the decrypted key list and the non-extractable AES key. Both are dropped when the vault locks.</li>
+        <li><b>Never stored:</b> your passphrase, or any key in plain text.</li>
+        <li><b>Clipboard:</b> copying puts only the current 6–8 digit code on the clipboard, which expires within its period. The setup key is only shown on screen when you ask for it.</li>
+      </ul>
+
+      <h2 id="csp">Content Security Policy</h2>
+      <p>Each page declares its policy in a <code>&lt;meta http-equiv="Content-Security-Policy"&gt;</code> tag, which the browser enforces. The app's policy is:</p>
+<pre class="code"><code>default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self';
+img-src 'self' blob:; connect-src 'none'; base-uri 'none';
+form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</code></pre>
+      <ul>
+        <li><code>connect-src 'none'</code> stops <code>fetch</code>, XHR, WebSockets and beacons, so even injected code couldn't send your keys anywhere through them.</li>
+        <li><code>script-src 'self'</code> with no <code>'unsafe-inline'</code> or <code>'unsafe-eval'</code> means only this site's own script files run. There are no inline scripts or styles.</li>
+        <li><code>img-src blob:</code> exists only so QR screenshots you choose can be decoded on your device.</li>
+        <li>This security page runs no scripts at all (<code>script-src 'none'</code>).</li>
+      </ul>
+      <p>Browsers ignore <code>frame-ancestors</code> in a meta tag, which is why the app checks for framing itself. If you host your own copy, also send the policy as an HTTP header with <code>frame-ancestors 'none'</code>.</p>
+
+      <h2 id="hosting">Hosting and origin</h2>
+      <p>Browser storage is shared by every page on the same origin (scheme, host and port), so where the app is hosted matters.</p>
+      <div class="callout warn">
+        <b>On GitHub Pages, the origin is shared</b>
+        <p>All project sites under one <code>username.github.io</code> share an origin. Any other site published from the same GitHub account could read the encrypted vault, or script an open copy of the app. For strong isolation, serve the app from its own domain or subdomain, such as <code>2fa.example.com</code>, used for nothing else.</p>
+      </div>
+      <p>GitHub Pages serves every file over HTTPS. Turn on "Enforce HTTPS" in the repository's Pages settings so the site is never served over plain HTTP.</p>
+
+      <h2 id="backups">Backups</h2>
+      <ul>
+        <li>A backup is the same encrypted envelope stored in your browser, as a JSON file. It can only be opened with the passphrase that was in use when it was made.</li>
+        <li>After you change your passphrase, older backups still open with the old one. Make a fresh backup and delete the old files.</li>
+        <li>Store backups somewhere private, such as an encrypted drive or a personal cloud folder. Never post one in a chat, email thread, issue tracker or public repository.</li>
+      </ul>
+
+      <h2 id="verify">Verify it yourself</h2>
+      <ol>
+        <li>Open the app, then your browser's developer tools (F12, or ⌥⌘I on a Mac), and go to the <b>Network</b> tab. Reload, create a vault, add a key and copy a code. Every request goes to this site, and nothing is sent after the page has loaded.</li>
+        <li>In the <b>Console</b>, run <code>fetch("https://example.com")</code>. The browser blocks it and reports a Content Security Policy violation.</li>
+        <li>In <b>Application → Local Storage</b>, open <code>keyring.vault.v1</code>. You'll see only the encrypted vault (version, salt, IV and ciphertext), never your setup keys.</li>
+        <li>Compare the files served by this site with the repository on GitHub. The app consists of <code>app/index.html</code>, <code>app/app.js</code>, <code>app/app.css</code>, <code>assets/totp.js</code> and <code>assets/vendor/jsQR.js</code>.</li>
+      </ol>
+
+      <h2 id="selfhost">Run your own copy</h2>
+      <p>The site is plain static files with no build step. To remove any dependence on this website:</p>
+      <ol>
+        <li>Download or clone the repository and review the code.</li>
+        <li>Serve the folder over HTTPS on a domain you control, or locally with <code>python3 -m http.server</code> and open <code>http://localhost:8000/app/</code>.</li>
+        <li>If your host supports headers, send the app's policy as a <code>Content-Security-Policy</code> header with <code>frame-ancestors 'none'</code> added.</li>
+      </ol>
+      <p>Browsers keep a separate vault for each origin, so move your keys to a new copy with an encrypted backup.</p>
+
+      <h2 id="advice">Recommendations</h2>
+      <ul>
+        <li>Use a passphrase of four or more random words that you don't use anywhere else.</li>
+        <li>Export an encrypted backup after adding keys, and again after changes.</li>
+        <li>Save each service's recovery codes separately from this app, such as on paper in a safe place.</li>
+        <li>Keep your browser and operating system up to date, and install only browser extensions you trust.</li>
+        <li>Use hardware security keys or passkeys for your email and financial accounts where they're offered.</li>
+      </ul>
+
+      <h2 id="report">Report a vulnerability</h2>
+      <p>Please report security problems privately, not in a public issue. Use GitHub's private vulnerability reporting on the repository: <b>Security → Report a vulnerability</b> at <a href="https://github.com/estuty/2FA-Keyring/security/advisories/new" rel="noopener">github.com/estuty/2FA-Keyring/security</a>. Include steps to reproduce and the browser you used. Reports are acknowledged as soon as possible, and fixed issues are credited if you wish.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>2FA Keyring. Static site, no cookies, no analytics.</p>
+    <nav aria-label="Footer">
+      <a href="app/">App</a>
+      <a href="security.html">Security</a>
+      <a href="#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

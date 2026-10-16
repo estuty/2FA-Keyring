@@ -3,1331 +3,236 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
 <title>2FA Keyring</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400..700&display=swap">
-<style>
-/* Layout: the lock screen is a two-column spread (a live example code beside the passphrase form).
-   Once unlocked, the app is one narrow ledger of keys under a sticky bar. */
-:root{
-  --bg:#EDF0F3; --surface:#F8F9FB; --field:#FFFFFF;
-  --ink:#111B26; --muted:#566475; --line:#D2D9E1;
-  --accent:#2C4BD6; --accent-ink:#FFFFFF; --accent-soft:#E2E7FB;
-  --warn:#B8470F; --danger:#B42318; --ok:#17744A;
-  --mono-s:45%; --mono-bgl:90%; --mono-fgl:28%;
-  --font-ui:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-code:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0E141B; --surface:#151D26; --field:#0E141B;
-    --ink:#E7ECF2; --muted:#93A1B2; --line:#27333F;
-    --accent:#8AA2FF; --accent-ink:#0E141B; --accent-soft:#1D2644;
-    --warn:#FF9A5C; --danger:#FF8A80; --ok:#5FD49A;
-    --mono-s:35%; --mono-bgl:22%; --mono-fgl:82%;
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0E141B; --surface:#151D26; --field:#0E141B;
-  --ink:#E7ECF2; --muted:#93A1B2; --line:#27333F;
-  --accent:#8AA2FF; --accent-ink:#0E141B; --accent-soft:#1D2644;
-  --warn:#FF9A5C; --danger:#FF8A80; --ok:#5FD49A;
-  --mono-s:35%; --mono-bgl:22%; --mono-fgl:82%;
-  color-scheme:dark;
-}
-
-*{box-sizing:border-box}
-body{
-  padding-left:max(16px,env(safe-area-inset-left,0px));
-  padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:20px 56px;
-  background:var(--bg); color:var(--ink);
-  font:15px/1.5 var(--font-ui); font-optical-sizing:auto;
-}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-h1,h2,h3,p,ul,dl,dd{margin:0}
-ul{padding:0;list-style:none}
-h1,h2,h3{text-wrap:balance;line-height:1.15}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-/* controls */
-.btn{
-  font:inherit;font-weight:600;color:var(--ink);background:var(--surface);
-  border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-height:40px;cursor:pointer;
-}
-.btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn.danger{color:var(--danger);border-color:var(--danger);background:transparent}
-.btn[disabled]{opacity:.55;cursor:not-allowed}
-.linkbtn{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent);text-decoration:underline;cursor:pointer}
-.icon{
-  display:grid;place-items:center;width:36px;height:36px;border-radius:8px;
-  border:0;background:transparent;color:var(--muted);cursor:pointer;font:inherit;font-size:22px;line-height:1;
-}
-.icon:hover{background:var(--accent-soft);color:var(--ink)}
-.field{display:grid;gap:6px;min-width:0}
-.field>label,.lbl{font-weight:600;font-size:13px}
-input,select,textarea{
-  font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);
-  border-radius:8px;padding:9px 12px;min-height:42px;width:100%;min-width:0;
-}
-textarea{resize:vertical;line-height:1.4}
-input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
-.mono-in{font-family:var(--font-code);font-size:14px;letter-spacing:.03em}
-.err{color:var(--danger);font-size:13px;min-height:0}
-.err:empty{display:none}
-.ok{color:var(--ok);font-size:13px}
-.ok:empty{display:none}
-.note{border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-
-/* ring */
-.ringwrap{position:relative;display:grid;place-items:center;width:36px;height:36px;flex:none}
-.ring{width:100%;height:100%}
-.ring circle{fill:none;stroke-width:3}
-.ring .trk{stroke:var(--line)}
-.ring .arc{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:94.25;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear}
-.ringwrap .sec{position:absolute;font:600 11px/1 var(--font-code);font-variant-numeric:tabular-nums;color:var(--muted)}
-
-/* lock screen */
-.wrap{max-width:1000px;margin-inline:auto}
-.lock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(24px,6vw,72px);align-items:center;min-height:min(640px,calc(100dvh - 80px))}
-.intro{display:grid;gap:20px;align-content:center;min-width:0}
-.brand{font-weight:700;font-size:15px;letter-spacing:.02em}
-.intro h1{font-size:clamp(30px,5vw,46px);font-weight:700;letter-spacing:-.015em}
-.lede{color:var(--muted);max-width:46ch;font-size:16px}
-.live{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);max-width:420px}
-.live .tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-.bigcode{font:600 clamp(28px,6vw,38px)/1.1 var(--font-code);letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.live .ringwrap{width:56px;height:56px}
-.live .ringwrap .sec{font-size:14px}
-.specs{display:flex;gap:10px 28px;flex-wrap:wrap}
-.specs div{display:grid;gap:2px}
-.specs dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.specs dd{font:500 14px var(--font-code)}
-.lock-card{display:grid;gap:16px;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface);min-width:0}
-.lock-card h2{font-size:22px}
-.lock-card form{display:grid;gap:14px}
-
-/* app */
-.app{max-width:760px;margin-inline:auto}
-.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;gap:12px;padding-block:8px 14px}
-.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap}
-.topbar h1{font-size:20px;font-weight:700}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.list{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
-.row{
-  display:grid;grid-template-columns:40px minmax(0,1fr) auto 36px 36px;
-  grid-template-areas:"mono name code ring edit";align-items:center;gap:12px;
-  padding:12px 14px;border-top:1px solid var(--line);transition:background .3s;
-}
-.row:first-child{border-top:0}
-.row.flash{background:var(--accent-soft)}
-.mono{
-  grid-area:mono;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;
-  font-weight:700;font-size:17px;
-  background:hsl(var(--h) var(--mono-s) var(--mono-bgl));
-  color:hsl(var(--h) calc(var(--mono-s) + 20%) var(--mono-fgl));
-}
-.who{grid-area:name;min-width:0;display:grid}
-.who .issuer{font-weight:650;font-size:16px}
-.who .label{font-size:13px;color:var(--muted)}
-.who .issuer,.who .label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.code{
-  grid-area:code;justify-self:end;text-align:right;background:none;border:0;color:var(--ink);
-  font:inherit;padding:4px 8px;margin-right:-8px;border-radius:8px;cursor:pointer;display:grid;gap:2px;
-}
-.code:hover{background:var(--accent-soft)}
-.code .digits{font:600 28px/1.1 var(--font-code);letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.code .next{font:12px/1.2 var(--font-code);color:var(--muted);font-variant-numeric:tabular-nums}
-.row .ringwrap{grid-area:ring}
-.row .edit{grid-area:edit}
-.row.urgent .arc{stroke:var(--warn)}
-.row.urgent .digits,.row.urgent .sec{color:var(--warn)}
-.empty{display:grid;gap:12px;padding:32px 24px;border:1px dashed var(--line);border-radius:12px;justify-items:start}
-.empty h2{font-size:20px}
-.empty p{color:var(--muted);max-width:52ch}
-.foot{margin-top:16px;color:var(--muted);font-size:13px;display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center}
-
-@media (max-width:760px){
-  .lock{grid-template-columns:minmax(0,1fr);min-height:0;align-items:start}
-}
-@media (max-width:560px){
-  .row{grid-template-columns:40px minmax(0,1fr) 36px 36px;grid-template-areas:"mono name ring edit" "code code code code"}
-  .code{justify-self:start;text-align:left;margin-right:0;margin-left:-8px}
-}
-
-/* dialogs */
-dialog{
-  border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;
-  width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;
-}
-dialog::backdrop{background:rgba(8,12,18,.55)}
-.dlg{display:grid;gap:16px;padding:20px}
-.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.dlg-head h2{font-size:20px}
-.dlg form{display:grid;gap:14px}
-.dlg h3{font-size:15px;margin-bottom:2px}
-.dlg section{display:grid;gap:12px;padding-top:16px;border-top:1px solid var(--line)}
-.dlg section:first-of-type{border-top:0;padding-top:0}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
-.tabs button{
-  font:inherit;font-weight:600;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;
-  margin-bottom:-1px;padding:10px 12px;cursor:pointer;
-}
-.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-.row2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
-details[open] summary{margin-bottom:10px}
-.prev{font:13px/1.4 var(--font-code);color:var(--ok);overflow-wrap:anywhere}
-.entries{list-style:none;margin:0;padding:0;display:grid;gap:14px}
-.entry{display:grid;gap:12px;min-width:0}
-.entry+.entry{padding-top:14px;border-top:1px solid var(--line)}
-.entry-head{display:flex;justify-content:space-between;align-items:center;margin-block:-6px}
-.entry-no{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (max-width:480px){.entry-grid{grid-template-columns:minmax(0,1fr)}}
-.addmore{justify-self:start}
-.prev.bad{color:var(--danger)}
-.secret-reveal{font:14px/1.4 var(--font-code);letter-spacing:.04em;overflow-wrap:anywhere;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field)}
-.delbox{display:grid;gap:10px;padding:12px;border:1px solid var(--danger);border-radius:8px}
-.backup-text{font:12px/1.35 var(--font-code);min-height:110px}
-
-#toast{
-  position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);
-  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;
-  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100vw - 32px);text-align:center;
-}
-#toast.show{opacity:1;transform:translate(-50%,0)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-</style>
+<meta name="description" content="A free, open-source authenticator that runs in your browser. Your two-factor keys are encrypted on your own device with a passphrase only you know. No account, no server, no tracking.">
+<meta property="og:title" content="2FA Keyring">
+<meta property="og:description" content="Your two-factor codes, encrypted on your own device. No account, no server, no tracking.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/totp.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
-<main id="lockView" class="wrap" hidden>
-  <div class="lock">
-    <section class="intro">
-      <p class="brand">2FA Keyring</p>
-      <h1>Every two-factor code, encrypted in one place.</h1>
-      <p class="lede">Add the setup key from each service. Codes are calculated on this device, and the vault is locked with a passphrase only you know.</p>
-      <div class="live" aria-label="Live example code">
-        <div>
-          <p class="tag">Example · RFC 6238 test key</p>
-          <p class="bigcode" id="heroCode">--- ---</p>
-        </div>
-        <div class="ringwrap">
-          <svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" id="heroArc" cx="18" cy="18" r="15" transform="rotate(-90 18 18)"/></svg>
-          <span class="sec" id="heroSec">30</span>
-        </div>
-      </div>
-      <dl class="specs">
-        <div><dt>Algorithms</dt><dd>SHA-1 · 256 · 512</dd></div>
-        <div><dt>Digits</dt><dd>6 · 7 · 8</dd></div>
-        <div><dt>Window</dt><dd>30 s default</dd></div>
-      </dl>
-    </section>
-
-    <section class="lock-card">
-      <h2 id="lockTitle">Unlock your vault</h2>
-      <p class="muted" id="lockHelp"></p>
-      <p class="note storageNote" hidden>This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup after adding keys.</p>
-      <form id="lockForm" autocomplete="off">
-        <div class="field">
-          <label for="pass">Passphrase</label>
-          <input id="pass" type="password" autocomplete="current-password" required>
-        </div>
-        <div class="field" id="pass2Wrap" hidden>
-          <label for="pass2">Confirm passphrase</label>
-          <input id="pass2" type="password" autocomplete="new-password">
-        </div>
-        <p class="err" id="lockErr" role="alert"></p>
-        <p class="small muted" id="lockNote"></p>
-        <button class="btn primary" id="lockBtn" type="submit">Unlock</button>
-      </form>
-      <div id="restoreBox" hidden>
-        <button class="linkbtn" id="restoreToggle" type="button">Restore from an encrypted backup</button>
-        <form id="restoreForm" hidden autocomplete="off">
-          <div class="field">
-            <label for="rText">Backup text</label>
-            <textarea id="rText" class="backup-text" spellcheck="false" placeholder="Paste the backup contents, or choose the file below"></textarea>
-          </div>
-          <div class="field">
-            <label for="rFile">Backup file</label>
-            <input id="rFile" type="file" accept=".json,application/json,text/plain">
-          </div>
-          <div class="field">
-            <label for="rPass">Backup passphrase</label>
-            <input id="rPass" type="password" autocomplete="off">
-          </div>
-          <p class="err" id="rErr" role="alert"></p>
-          <button class="btn" id="rBtn" type="submit">Restore vault</button>
-        </form>
-      </div>
-      <div id="damagedBox" hidden>
-        <p class="small muted">Starting over deletes the unreadable vault stored in this browser.</p>
-        <button class="btn danger" id="discardBtn" type="button">Discard it and start fresh</button>
-      </div>
-    </section>
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="#how">How it works</a>
+      <a href="security.html">Security</a>
+      <a class="hide-sm" href="#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener">Source</a>
+      <a class="btn primary small" href="app/">Open the app</a>
+    </nav>
   </div>
-</main>
+</header>
 
-<div id="appView" class="app" hidden>
-  <header class="topbar">
-    <div class="topbar-row">
-      <div>
-        <h1>2FA Keyring</h1>
-        <p class="muted small" id="count"></p>
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1>Your <span class="nowrap">two-factor</span> codes, <em>encrypted on your own device.</em></h1>
+        <p class="lead">2FA Keyring is a free, open-source authenticator that runs entirely in your browser. There's no account and no server. Your keys are locked with a passphrase that only you know.</p>
+        <div class="btns">
+          <a class="btn primary" href="app/">Open the app</a>
+          <a class="btn" href="security.html">Read the security model</a>
+        </div>
+        <ul class="facts" aria-label="Security facts">
+          <li class="fact">AES-256-GCM</li>
+          <li class="fact">PBKDF2 · 600,000 rounds</li>
+          <li class="fact">No network access</li>
+          <li class="fact">No cookies or analytics</li>
+        </ul>
+        <p class="works">Works with any service that offers "authenticator app" codes, such as GitHub, Google, Microsoft, AWS, Discord and Dropbox.</p>
       </div>
-      <div class="actions">
-        <button class="btn primary" id="btnAdd" type="button">Add key</button>
-        <button class="btn" id="btnBackup" type="button">Backup</button>
-        <button class="btn" id="btnSettings" type="button">Settings</button>
-        <button class="btn" id="btnLock" type="button">Lock</button>
-      </div>
-    </div>
-    <input id="q" type="search" placeholder="Search services or accounts" aria-label="Search keys" autocomplete="off">
-  </header>
 
-  <p class="note storageNote" hidden style="margin-bottom:12px">This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup now.</p>
-  <ul id="list" class="list"></ul>
-  <section id="empty" class="empty" hidden>
-    <h2>No keys yet</h2>
-    <p>Add as many services as you like, several at a time. Each needs its setup key (the text code shown beside the QR code), an otpauth:// link, or a QR screenshot.</p>
-    <div class="btns">
-      <button class="btn primary" id="emptyAdd" type="button">Add your first key</button>
-      <button class="btn" id="emptyDemo" type="button">Try an example key</button>
+      <figure class="device" aria-label="Live example of the app">
+        <div class="device-bar">
+          <strong>Your keys</strong>
+          <span class="lockchip">● Encrypted</span>
+        </div>
+        <ol class="demo" id="demo">
+          <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" data-algo="SHA1" data-digits="6" data-period="30">
+            <span class="mono" aria-hidden="true">A</span>
+            <span class="demo-who"><b>Example A</b><span>SHA-1 · 6 digits · 30 s</span></span>
+            <span class="digits">--- ---</span>
+            <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
+          </li>
+          <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA" data-algo="SHA256" data-digits="8" data-period="30">
+            <span class="mono" aria-hidden="true">B</span>
+            <span class="demo-who"><b>Example B</b><span>SHA-256 · 8 digits · 30 s</span></span>
+            <span class="digits">---- ----</span>
+            <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
+          </li>
+          <li class="demo-row" data-secret="GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNA" data-algo="SHA512" data-digits="6" data-period="60">
+            <span class="mono" aria-hidden="true">C</span>
+            <span class="demo-who"><b>Example C</b><span>SHA-512 · 6 digits · 60 s</span></span>
+            <span class="digits">--- ---</span>
+            <span class="ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15"/></svg><span class="sec"></span></span>
+          </li>
+        </ol>
+        <figcaption class="device-foot">These codes are live, calculated in your browser right now from the public test keys in RFC 6238. They aren't real accounts.</figcaption>
+      </figure>
     </div>
   </section>
-  <p id="noMatch" class="muted" hidden style="padding:16px 4px">No keys match that search.</p>
-  <p class="foot" id="foot"></p>
-</div>
 
-<dialog id="addDlg" aria-labelledby="addTitle">
-  <div class="dlg">
-    <div class="dlg-head"><h2 id="addTitle">Add keys</h2><button class="icon" id="addClose" type="button" aria-label="Close">×</button></div>
-    <div class="tabs" role="tablist">
-      <button role="tab" id="tabKey" type="button" aria-selected="true" aria-controls="keyForm">Setup keys</button>
-      <button role="tab" id="tabLink" type="button" aria-selected="false" aria-controls="linkForm">Links or QR images</button>
+  <section class="block band" id="model" aria-labelledby="model-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">What happens to your keys</p>
+        <h2 class="h2" id="model-h">Encrypted before they're stored. Never sent anywhere.</h2>
+        <p class="lead">Every key you add goes through the same path, inside your browser, before anything is written to disk.</p>
+      </div>
+      <ol class="flow">
+        <li><span class="tag">You type</span><b>Your passphrase</b><p>It's never stored or sent anywhere. It exists only in memory while you unlock the vault.</p></li>
+        <li><span class="tag">Key derivation</span><b>PBKDF2-SHA256</b><p>600,000 rounds with a random 16-byte salt slow down anyone trying to guess your passphrase.</p></li>
+        <li><span class="tag">Encryption</span><b>AES-256-GCM</b><p>Your keys are sealed with a fresh random IV on every save. Any tampering makes decryption fail.</p></li>
+        <li><span class="tag">Storage</span><b>This browser only</b><p>Only the encrypted vault is saved, in this browser's local storage. It never reaches a server.</p></li>
+      </ol>
+      <div class="nonet" role="note">
+        <span class="x" aria-hidden="true">×</span>
+        <div>
+          <b>The app is blocked from the network</b>
+          <p>The app's Content Security Policy sets <code>connect-src 'none'</code>, so the browser itself refuses any attempt to send data. All code and fonts come from this site, with no CDNs, trackers or third-party scripts.</p>
+        </div>
+      </div>
+      <div class="policy">
+        <p class="cap">The exact policy the app runs under. You can check it with View Source.</p>
+<pre class="code"><code><span class="k">default-src</span> <span class="v">'none'</span>;  <span class="k">script-src</span> <span class="v">'self'</span>;  <span class="k">style-src</span> <span class="v">'self'</span>;
+<span class="k">font-src</span> <span class="v">'self'</span>;  <span class="k">img-src</span> <span class="v">'self' blob:</span>;  <span class="k">connect-src</span> <span class="v">'none'</span>;
+<span class="k">base-uri</span> <span class="v">'none'</span>;  <span class="k">form-action</span> <span class="v">'none'</span>;  <span class="k">object-src</span> <span class="v">'none'</span>;  <span class="k">worker-src</span> <span class="v">'none'</span></code></pre>
+      </div>
     </div>
-    <form id="keyForm" role="tabpanel" aria-labelledby="tabKey" autocomplete="off">
-      <ol id="entries" class="entries"></ol>
-      <button class="linkbtn addmore" id="addEntry" type="button">+ Add another key</button>
-      <p class="err" id="keyErr" role="alert"></p>
-      <div class="btns"><button class="btn primary" id="keySubmit" type="submit">Save key</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
-    </form>
-    <form id="linkForm" role="tabpanel" aria-labelledby="tabLink" hidden autocomplete="off">
-      <div class="field"><label for="lLinks">otpauth:// links, one per line</label><textarea id="lLinks" rows="4" class="mono-in" spellcheck="false" placeholder="otpauth://totp/GitHub:you@example.com?secret=...&amp;issuer=GitHub"></textarea></div>
-      <div class="field"><label for="lFile">Or choose QR code screenshots (you can pick several)</label><input id="lFile" type="file" accept="image/*" multiple></div>
-      <p class="err" id="linkErr" role="alert"></p>
-      <div class="btns"><button class="btn primary" type="submit">Add</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
-    </form>
-  </div>
-</dialog>
+  </section>
 
-<dialog id="editDlg" aria-labelledby="editTitle">
-  <div class="dlg">
-    <div class="dlg-head"><h2 id="editTitle">Edit key</h2><button class="icon" type="button" aria-label="Close" data-close="editDlg">×</button></div>
-    <form id="editForm" autocomplete="off">
-      <div class="field"><label for="eIssuer">Service</label><input id="eIssuer" maxlength="80"></div>
-      <div class="field"><label for="eLabel">Account</label><input id="eLabel" maxlength="120"></div>
-      <p class="small muted" id="eSpec"></p>
-      <div>
-        <button class="linkbtn" id="eReveal" type="button">Show setup key</button>
-        <p class="secret-reveal" id="eSecret" hidden style="margin-top:8px"></p>
+  <section class="block" aria-labelledby="limits-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Honest limits</p>
+        <h2 class="h2" id="limits-h">What it protects against, and what it can't</h2>
+        <p class="lead">No authenticator can protect you from everything. Here's exactly where the line is.</p>
       </div>
-      <p class="err" id="editErr" role="alert"></p>
+      <div class="two">
+        <div class="col yes">
+          <h3><span class="dot" aria-hidden="true"></span>Protected</h3>
+          <ul>
+            <li><b>A stolen backup file or browser profile</b><span>Without your passphrase, the vault is unreadable ciphertext.</span></li>
+            <li><b>Our servers being hacked</b><span>There are no servers. Nothing about you or your keys is stored anywhere but your device.</span></li>
+            <li><b>Tracking and data collection</b><span>No accounts, cookies, analytics or network requests from the app.</span></li>
+            <li><b>Someone walking up to your screen later</b><span>Auto-lock clears the decrypted keys from memory after inactivity, or as soon as you switch tabs.</span></li>
+            <li><b>Being loaded inside another site</b><span>The app refuses to run inside a frame, so it can't be overlaid to trick your clicks.</span></li>
+          </ul>
+        </div>
+        <div class="col no">
+          <h3><span class="dot" aria-hidden="true"></span>Not protected</h3>
+          <ul>
+            <li><b>A weak passphrase</b><span>Encryption is only as strong as your passphrase. The app requires 12 or more characters and rejects easy ones.</span></li>
+            <li><b>Malware or a malicious browser extension</b><span>Software on your device can read the page while it's unlocked, as with any password manager.</span></li>
+            <li><b>A forgotten passphrase</b><span>There's no reset and no back door. Keep your services' recovery codes somewhere safe.</span></li>
+            <li><b>Clearing your browser data</b><span>That deletes the vault. Export an encrypted backup after adding keys.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block band" id="how" aria-labelledby="how-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Getting started</p>
+        <h2 class="h2" id="how-h">Set up in under two minutes</h2>
+      </div>
+      <ol class="steps">
+        <li><h3>Create your vault</h3><p>Choose a passphrase of at least 12 characters. Four or more random words work well. It encrypts everything that follows.</p></li>
+        <li><h3>Add your keys</h3><p>When a service shows a QR code for an authenticator app, paste the setup key or the <code>otpauth://</code> link, or upload a screenshot of the QR code. You can add several at once.</p></li>
+        <li><h3>Back up, then sign in</h3><p>Export an encrypted backup and store it somewhere safe. From then on, open the app, unlock it and click a code to copy it.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="feat-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Features</p>
+        <h2 class="h2" id="feat-h">Everything an authenticator needs, nothing it doesn't</h2>
+      </div>
+      <dl class="features">
+        <div><dt>Live codes with countdown</dt><dd>Each code shows the time left, and the next code appears just before it changes.</dd></div>
+        <div><dt>Every common format</dt><dd>SHA-1, SHA-256 and SHA-512, with 6, 7 or 8 digits and any period from 1 to 300 seconds.</dd></div>
+        <div><dt>Three ways to add keys</dt><dd>Type the setup key, paste <code>otpauth://</code> links, or upload QR screenshots. The QR codes are decoded on your device.</dd></div>
+        <div><dt>Encrypted backups</dt><dd>Export to a file or as text, restore on another device, or merge with an existing vault.</dd></div>
+        <div><dt>Auto-lock</dt><dd>Locks after 1, 5 or 15 minutes of inactivity, and optionally as soon as you leave the tab.</dd></div>
+        <div><dt>Works offline</dt><dd>Codes depend only on your key and your clock, so no connection is needed once the page has loaded.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block band" id="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="kicker">Questions</p>
+        <h2 class="h2" id="faq-h">Frequently asked</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Can anyone else see my keys, including the people who run this site?</summary>
+          <div class="ans"><p>No. Your keys are encrypted in your browser and saved only on your device. This site has no backend to send them to, and the app's security policy blocks network connections. The site is just static files.</p></div>
+        </details>
+        <details>
+          <summary>What happens if I forget my passphrase?</summary>
+          <div class="ans"><p>The vault can't be opened, by you or by anyone else. That's what keeps it secure. Use each service's recovery codes to sign in and set up two-factor again, then create a new vault.</p></div>
+        </details>
+        <details>
+          <summary>How do I move my keys to a new computer or phone?</summary>
+          <div class="ans"><p>In the app, open Backup and save the encrypted backup file. On the new device, open the app, choose "Restore from an encrypted backup", and enter the passphrase the backup was made with.</p></div>
+        </details>
+        <details>
+          <summary>Why does my vault disappear in a private window?</summary>
+          <div class="ans"><p>Private windows erase local storage when they close, and each browser keeps its own vault. Use a normal window, and keep a backup.</p></div>
+        </details>
+        <details>
+          <summary>My codes are rejected. What's wrong?</summary>
+          <div class="ans"><p>Time-based codes depend on your device's clock. Make sure your clock is set automatically. If a service uses non-default settings, check the key's Advanced options (algorithm, digits, period) against what the service shows.</p></div>
+        </details>
+        <details>
+          <summary>How can I check these claims myself?</summary>
+          <div class="ans"><p>Open your browser's developer tools on the app and watch the Network tab while you use it: you'll see only this site's own files. The full source is on GitHub, and the <a href="security.html#verify">security page</a> lists step-by-step checks.</p></div>
+        </details>
+        <details>
+          <summary>Is it free?</summary>
+          <div class="ans"><p>Yes. There's no account, no subscription and no ads.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="block closing" aria-labelledby="close-h">
+    <div class="wrap">
+      <h2 class="h2" id="close-h">Your keys, your device, your passphrase.</h2>
       <div class="btns">
-        <button class="btn primary" type="submit">Save</button>
-        <button class="btn" type="button" data-close="editDlg">Cancel</button>
-        <button class="btn danger" id="eDelete" type="button">Delete key</button>
+        <a class="btn primary" href="app/">Open 2FA Keyring</a>
+        <a class="btn" href="https://github.com/estuty/2FA-Keyring" rel="noopener">View the source</a>
       </div>
-      <div class="delbox" id="delBox" hidden>
-        <p class="small">Delete this key? You will not be able to generate its codes again unless you kept the service's recovery codes or setup key.</p>
-        <div class="btns"><button class="btn danger" id="eDeleteYes" type="button">Yes, delete it</button><button class="btn" id="eDeleteNo" type="button">Keep it</button></div>
-      </div>
-    </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <p>2FA Keyring. Static site, no cookies, no analytics.</p>
+    <nav aria-label="Footer">
+      <a href="app/">App</a>
+      <a href="security.html">Security</a>
+      <a href="security.html#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener">Source code</a>
+    </nav>
   </div>
-</dialog>
-
-<dialog id="settingsDlg" aria-labelledby="setTitle">
-  <div class="dlg">
-    <div class="dlg-head"><h2 id="setTitle">Settings</h2><button class="icon" type="button" aria-label="Close" data-close="settingsDlg">×</button></div>
-    <section>
-      <h3>Auto-lock</h3>
-      <div class="field">
-        <label for="sLock">Lock the vault after inactivity</label>
-        <select id="sLock"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="0">Never</option></select>
-      </div>
-    </section>
-    <section>
-      <h3>Change passphrase</h3>
-      <form id="passForm" autocomplete="off">
-        <div class="field"><label for="sNew">New passphrase</label><input id="sNew" type="password" autocomplete="new-password"></div>
-        <div class="field"><label for="sNew2">Confirm new passphrase</label><input id="sNew2" type="password" autocomplete="new-password"></div>
-        <p class="err" id="sErr" role="alert"></p>
-        <p class="ok" id="sOk" role="status"></p>
-        <div class="btns"><button class="btn" type="submit">Change passphrase</button></div>
-      </form>
-      <p class="small muted">Older backups still open with the passphrase they were made with.</p>
-    </section>
-    <section>
-      <h3>Erase vault</h3>
-      <p class="small muted">Deletes every key stored in this browser. Make a backup first if you may need them.</p>
-      <div class="field"><label for="sErase">Type ERASE to confirm</label><input id="sErase" autocomplete="off" spellcheck="false"></div>
-      <div class="btns"><button class="btn danger" id="sEraseBtn" type="button" disabled>Erase vault</button></div>
-    </section>
-  </div>
-</dialog>
-
-<dialog id="backupDlg" aria-labelledby="bkTitle">
-  <div class="dlg">
-    <div class="dlg-head"><h2 id="bkTitle">Backup</h2><button class="icon" type="button" aria-label="Close" data-close="backupDlg">×</button></div>
-    <section>
-      <h3>Export an encrypted backup</h3>
-      <p class="small muted">The backup stays encrypted with your passphrase. Without that passphrase it cannot be opened. <span id="bkLast"></span></p>
-      <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text"></textarea>
-      <div class="btns">
-        <button class="btn primary" id="bSave" type="button">Save file</button>
-        <button class="btn" id="bCopy" type="button">Copy text</button>
-      </div>
-      <p class="err" id="bErr" role="alert"></p>
-    </section>
-    <section>
-      <h3>Import and merge a backup</h3>
-      <form id="importForm" autocomplete="off">
-        <div class="field"><label for="iFile">Backup file</label><input id="iFile" type="file" accept=".json,application/json,text/plain"></div>
-        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text" spellcheck="false"></textarea></div>
-        <div class="field"><label for="iPass">Backup passphrase</label><input id="iPass" type="password" autocomplete="off"></div>
-        <p class="err" id="iErr" role="alert"></p>
-        <p class="ok" id="iOk" role="status"></p>
-        <div class="btns"><button class="btn" type="submit">Merge into vault</button></div>
-      </form>
-    </section>
-  </div>
-</dialog>
-
-<div id="toast" role="status" aria-live="polite"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
-<script>
-/*CORE-START*/
-const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-const ALGS = { SHA1: "SHA-1", SHA256: "SHA-256", SHA512: "SHA-512" };
-const uerr = (m) => Object.assign(new Error(m), { user: true });
-
-function normSecret(s) {
-  return String(s || "").toUpperCase().replace(/[\s\-_=]/g, "");
-}
-
-function base32Decode(input) {
-  const s = normSecret(input);
-  if (!s || /[^A-Z2-7]/.test(s)) throw new Error("bad base32");
-  let bits = 0, val = 0;
-  const out = [];
-  for (const ch of s) {
-    val = (val << 5) | B32.indexOf(ch);
-    bits += 5;
-    if (bits >= 8) {
-      out.push((val >> (bits - 8)) & 255);
-      bits -= 8;
-      val &= (1 << bits) - 1;
-    }
-  }
-  return new Uint8Array(out);
-}
-
-async function hmacKey(bytes, algo) {
-  return crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: ALGS[algo] }, false, ["sign"]);
-}
-
-async function hotpFromKey(key, counter, digits) {
-  const buf = new ArrayBuffer(8);
-  const dv = new DataView(buf);
-  dv.setUint32(0, Math.floor(counter / 4294967296));
-  dv.setUint32(4, counter >>> 0);
-  const h = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
-  const o = h[h.length - 1] & 15;
-  const bin = ((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
-  return String(bin % Math.pow(10, digits)).padStart(digits, "0");
-}
-
-async function totpAt(secret, opts, nowMs) {
-  const o = Object.assign({ algo: "SHA1", digits: 6, period: 30 }, opts);
-  const key = await hmacKey(base32Decode(secret), o.algo);
-  return hotpFromKey(key, Math.floor(nowMs / 1000 / o.period), o.digits);
-}
-
-function groupCode(code) {
-  const k = Math.ceil(code.length / 2);
-  return code.slice(0, k) + " " + code.slice(k);
-}
-
-function parseOtpauth(uri) {
-  const s = String(uri || "").trim();
-  if (/^otpauth-migration:\/\//i.test(s)) {
-    throw uerr("That is a Google Authenticator export code. Add each service with its own setup key or link instead.");
-  }
-  const m = /^otpauth:\/\/(totp|hotp)\/([^?]*)\??(.*)$/i.exec(s);
-  if (!m) throw uerr("That isn't an otpauth:// link.");
-  if (m[1].toLowerCase() === "hotp") throw uerr("Counter-based (HOTP) keys aren't supported. Only time-based keys are.");
-  let label = m[2];
-  try { label = decodeURIComponent(label); } catch (e) {}
-  const q = new URLSearchParams(m[3]);
-  const secret = q.get("secret") || "";
-  if (!secret) throw uerr("That link has no secret in it.");
-  let issuer = q.get("issuer") || "";
-  let account = label;
-  const i = label.indexOf(":");
-  if (i >= 0) {
-    const pre = label.slice(0, i).trim();
-    account = label.slice(i + 1).trim();
-    if (!issuer) issuer = pre;
-  }
-  return {
-    issuer: issuer.trim(),
-    label: account.trim(),
-    secret,
-    algo: (q.get("algorithm") || "SHA1").toUpperCase(),
-    digits: q.get("digits") || 6,
-    period: q.get("period") || 30
-  };
-}
-/*CORE-END*/
-</script>
-
-<script>
-(function () {
-  "use strict";
-  var $ = function (s, r) { return (r || document).querySelector(s); };
-  var C = 94.2478;
-  var DEMO = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
-  var LS_VAULT = "keyring.vault.v1", LS_PREFS = "keyring.prefs.v1";
-  var PBKDF_ITER = 600000;
-  var enc = new TextEncoder(), dec = new TextDecoder();
-
-  /* ---------- storage ---------- */
-  var storageOK = true, memVault = null, damaged = false;
-  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { storageOK = false; return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { storageOK = false; return false; } }
-  function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
-
-  var S = { key: null, salt: null, iter: PBKDF_ITER, accounts: [] };
-  var envelope = null;
-  var prefs = { autolock: 5, lastBackup: 0 };
-  var lastActive = Date.now();
-  var rows = new Map();
-  var keyCache = new Map();
-
-  function checkEnvelope(e) {
-    if (!e || e.app !== "keyring" || e.v !== 1 || typeof e.salt !== "string" || typeof e.iv !== "string" ||
-        typeof e.ct !== "string" || !Number.isInteger(e.iter) || e.iter < 100000 || e.iter > 2000000) {
-      throw new Error("bad envelope");
-    }
-    return e;
-  }
-
-  function loadStored() {
-    var raw = lsGet(LS_VAULT);
-    if (raw) {
-      try { envelope = checkEnvelope(JSON.parse(raw)); } catch (e) { damaged = true; }
-    }
-    var p = lsGet(LS_PREFS);
-    if (p) {
-      try {
-        var o = JSON.parse(p);
-        if ([0, 1, 5, 15].indexOf(o.autolock) >= 0) prefs.autolock = o.autolock;
-        if (Number.isFinite(o.lastBackup)) prefs.lastBackup = o.lastBackup;
-      } catch (e) {}
-    }
-  }
-  function savePrefs() { lsSet(LS_PREFS, JSON.stringify(prefs)); }
-
-  /* ---------- crypto ---------- */
-  function b64e(buf) {
-    var b = new Uint8Array(buf), s = "";
-    for (var i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
-    return btoa(s);
-  }
-  function b64d(str) {
-    var s = atob(str), b = new Uint8Array(s.length);
-    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
-    return b;
-  }
-  async function deriveKey(pass, salt, iter) {
-    var base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
-    return crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt: salt, iterations: iter, hash: "SHA-256" },
-      base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-    );
-  }
-  async function seal(key, salt, iter, data) {
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, enc.encode(JSON.stringify(data)));
-    return { app: "keyring", v: 1, kdf: "PBKDF2-SHA256", iter: iter, salt: b64e(salt), iv: b64e(iv), ct: b64e(ct) };
-  }
-  async function openEnvelope(env, pass) {
-    checkEnvelope(env);
-    var salt = b64d(env.salt);
-    var key = await deriveKey(pass, salt, env.iter);
-    var pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64d(env.iv) }, key, b64d(env.ct));
-    return { key: key, salt: salt, iter: env.iter, data: JSON.parse(dec.decode(pt)) };
-  }
-
-  var saveChain = Promise.resolve();
-  function persist() {
-    saveChain = saveChain.then(async function () {
-      if (!S.key) return;
-      var env = await seal(S.key, S.salt, S.iter, { accounts: S.accounts });
-      envelope = env;
-      damaged = false;
-      var ok = lsSet(LS_VAULT, JSON.stringify(env));
-      updateStorageNote(!ok);
-    }).catch(function () {});
-    return saveChain;
-  }
-  function updateStorageNote(show) {
-    document.querySelectorAll(".storageNote").forEach(function (n) { n.hidden = !(show || !storageOK); });
-  }
-
-  /* ---------- accounts ---------- */
-  function makeAccount(o) {
-    var secret = normSecret(o.secret);
-    if (secret.length < 8) throw uerr("The setup key is too short. It is usually 16 or more letters and digits.");
-    try { base32Decode(secret); } catch (e) { throw uerr("The setup key can only contain the letters A to Z and the digits 2 to 7."); }
-    var algo = String(o.algo || "SHA1").toUpperCase();
-    if (!ALGS[algo]) throw uerr("That algorithm isn't supported. Use SHA1, SHA256 or SHA512.");
-    var digits = Number(o.digits || 6);
-    if ([6, 7, 8].indexOf(digits) < 0) throw uerr("Digits must be 6, 7 or 8.");
-    var period = Number(o.period || 30);
-    if (!Number.isInteger(period) || period < 1 || period > 300) throw uerr("The period must be a whole number of seconds from 1 to 300.");
-    var issuer = String(o.issuer || "").trim().slice(0, 80);
-    var label = String(o.label || "").trim().slice(0, 120);
-    if (!issuer && !label) throw uerr("Enter a service name or an account.");
-    return {
-      id: typeof o.id === "string" && o.id ? o.id : crypto.randomUUID(),
-      issuer: issuer, label: label, secret: secret, algo: algo, digits: digits, period: period,
-      added: Number.isFinite(o.added) ? o.added : Date.now()
-    };
-  }
-  function sanitizeAccounts(arr) {
-    var out = [];
-    if (!Array.isArray(arr)) return out;
-    arr.forEach(function (o) { try { out.push(makeAccount(o)); } catch (e) {} });
-    return out;
-  }
-  function isDup(a) {
-    return S.accounts.some(function (x) {
-      return x.secret === a.secret && x.algo === a.algo && x.digits === a.digits && x.period === a.period;
-    });
-  }
-  async function keyFor(a) {
-    var sig = a.secret + "|" + a.algo;
-    var c = keyCache.get(a.id);
-    if (!c || c.sig !== sig) {
-      c = { sig: sig, key: await hmacKey(base32Decode(a.secret), a.algo) };
-      keyCache.set(a.id, c);
-    }
-    return c.key;
-  }
-  function nameOf(a) { return a.issuer || a.label; }
-  function hue(str) {
-    var h = 0;
-    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-    return h % 360;
-  }
-
-  /* ---------- small helpers ---------- */
-  function h(tag, attrs) {
-    var el = document.createElement(tag);
-    var a = attrs || {};
-    Object.keys(a).forEach(function (k) {
-      var v = a[k];
-      if (v == null || v === false) return;
-      if (k === "class") el.className = v;
-      else if (k === "text") el.textContent = v;
-      else if (k.indexOf("on") === 0) el.addEventListener(k.slice(2), v);
-      else el.setAttribute(k, v === true ? "" : v);
-    });
-    for (var i = 2; i < arguments.length; i++) {
-      var kid = arguments[i];
-      if (kid == null || kid === false) continue;
-      el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
-    }
-    return el;
-  }
-  var toastTimer = 0;
-  function toast(msg) {
-    var t = $("#toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2200);
-  }
-  function fmtDate(ts) {
-    return new Date(ts).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  }
-  function openDlg(d) { if (!d.open) d.showModal(); }
-  document.querySelectorAll("dialog").forEach(function (d) {
-    d.addEventListener("click", function (ev) { if (ev.target === d) d.close(); });
-  });
-  document.querySelectorAll("[data-close]").forEach(function (b) {
-    b.addEventListener("click", function () { $("#" + b.getAttribute("data-close")).close(); });
-  });
-
-  /* ---------- views ---------- */
-  var lockView = $("#lockView"), appView = $("#appView");
-  var mode = "create";
-
-  function showLock(note) {
-    appView.hidden = true;
-    lockView.hidden = false;
-    mode = damaged ? "damaged" : envelope ? "unlock" : "create";
-    $("#lockErr").textContent = "";
-    $("#lockNote").textContent = note || "";
-    $("#pass").value = ""; $("#pass2").value = "";
-    var create = mode === "create", unlock = mode === "unlock", dmg = mode === "damaged";
-    $("#lockForm").hidden = dmg;
-    $("#pass2Wrap").hidden = !create;
-    $("#pass").autocomplete = create ? "new-password" : "current-password";
-    $("#pass2").required = create;
-    $("#lockTitle").textContent = create ? "Create your vault" : dmg ? "Vault can't be read" : "Unlock your vault";
-    $("#lockHelp").textContent = create
-      ? "Choose a passphrase of at least 10 characters. It encrypts your keys in this browser, and there is no way to recover it."
-      : dmg ? "The vault stored in this browser is damaged. Restore it from an encrypted backup." : "Enter your passphrase to see your codes.";
-    $("#lockBtn").textContent = create ? "Create vault" : "Unlock";
-    $("#restoreBox").hidden = unlock;
-    $("#restoreForm").hidden = !dmg;
-    $("#restoreToggle").hidden = dmg;
-    $("#damagedBox").hidden = !dmg;
-    updateStorageNote(false);
-    setTimeout(function () { if (!dmg) $("#pass").focus(); }, 0);
-  }
-
-  function enterApp() {
-    lockView.hidden = true;
-    appView.hidden = false;
-    lastActive = Date.now();
-    $("#q").value = "";
-    render();
-    updateStorageNote(false);
-  }
-
-  function lock(note) {
-    S.key = null; S.salt = null; S.accounts = [];
-    keyCache.clear(); rows.clear();
-    $("#list").replaceChildren();
-    document.querySelectorAll("dialog").forEach(function (d) { if (d.open) d.close(); });
-    $("#entries").replaceChildren();
-    ["#lLinks", "#eSecret", "#bText", "#iText", "#iPass", "#sNew", "#sNew2"].forEach(function (s) {
-      var el = $(s); if (!el) return;
-      if ("value" in el) el.value = ""; else el.textContent = "";
-    });
-    showLock(note);
-  }
-
-  function setBusy(b) {
-    $("#lockBtn").disabled = b;
-    if (b) $("#lockBtn").textContent = mode === "create" ? "Creating…" : "Unlocking…";
-    else $("#lockBtn").textContent = mode === "create" ? "Create vault" : "Unlock";
-  }
-
-  $("#lockForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    $("#lockErr").textContent = "";
-    var pass = $("#pass").value;
-    setBusy(true);
-    try {
-      if (mode === "create") {
-        if (pass.length < 10) throw uerr("Use at least 10 characters.");
-        if (pass !== $("#pass2").value) throw uerr("The two passphrases don't match.");
-        var salt = crypto.getRandomValues(new Uint8Array(16));
-        var key = await deriveKey(pass, salt, PBKDF_ITER);
-        S.key = key; S.salt = salt; S.iter = PBKDF_ITER; S.accounts = [];
-        await persist();
-      } else {
-        var r = await openEnvelope(envelope, pass);
-        S.key = r.key; S.salt = r.salt; S.iter = r.iter; S.accounts = sanitizeAccounts(r.data.accounts);
-      }
-      mode = "unlock";
-      enterApp();
-    } catch (e) {
-      $("#lockErr").textContent = e.user ? e.message
-        : mode === "unlock" ? "That passphrase didn't open the vault." : "Something went wrong. Try again.";
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  $("#restoreToggle").addEventListener("click", function () {
-    var f = $("#restoreForm");
-    f.hidden = !f.hidden;
-  });
-  $("#rFile").addEventListener("change", async function (ev) {
-    var f = ev.target.files[0];
-    if (f) $("#rText").value = await f.text();
-  });
-  $("#restoreForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var err = $("#rErr"); err.textContent = "";
-    var env;
-    try { env = checkEnvelope(JSON.parse($("#rText").value)); }
-    catch (e) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
-    $("#rBtn").disabled = true;
-    try {
-      var r = await openEnvelope(env, $("#rPass").value);
-      S.key = r.key; S.salt = r.salt; S.iter = r.iter; S.accounts = sanitizeAccounts(r.data.accounts);
-      await persist();
-      $("#rPass").value = ""; $("#rText").value = "";
-      mode = "unlock";
-      enterApp();
-    } catch (e) {
-      err.textContent = "That passphrase doesn't open this backup.";
-    } finally { $("#rBtn").disabled = false; }
-  });
-  $("#discardBtn").addEventListener("click", function () {
-    lsDel(LS_VAULT); envelope = null; damaged = false;
-    showLock("Starting fresh. Create a new vault.");
-  });
-
-  /* ---------- list ---------- */
-  function buildRow(a) {
-    var name = nameOf(a);
-    var initial = (name.match(/[A-Za-z0-9]/) || ["?"])[0].toUpperCase();
-    var ring = h("div", { class: "ringwrap" });
-    ring.innerHTML = '<svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15" transform="rotate(-90 18 18)"/></svg>';
-    var sec = h("span", { class: "sec", text: "" });
-    ring.append(sec);
-    var digits = h("span", { class: "digits", text: "••• •••" });
-    var next = h("span", { class: "next", hidden: true });
-    var btn = h("button", { class: "code", type: "button", "aria-label": "Copy code for " + name }, digits, next);
-    var edit = h("button", { class: "icon edit", type: "button", "aria-label": "Edit " + name });
-    edit.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
-    var el = h("li", { class: "row" },
-      h("span", { class: "mono", "aria-hidden": "true", style: "--h:" + hue(name) }, initial),
-      h("div", { class: "who" }, h("span", { class: "issuer", text: name }), a.issuer && a.label ? h("span", { class: "label", text: a.label }) : null),
-      btn, ring, edit);
-    var r = {
-      el: el, a: a, counter: -1, nextCounter: -1, code: "", urgent: false,
-      digits: digits, next: next, sec: sec, arc: ring.querySelector(".arc")
-    };
-    btn.addEventListener("click", function () { copyCode(r); });
-    edit.addEventListener("click", function () { openEdit(a.id); });
-    return r;
-  }
-
-  function render() {
-    var q = $("#q").value.trim().toLowerCase();
-    var all = S.accounts.slice().sort(function (x, y) {
-      return nameOf(x).toLowerCase().localeCompare(nameOf(y).toLowerCase()) || x.label.toLowerCase().localeCompare(y.label.toLowerCase());
-    });
-    var list = all.filter(function (a) { return !q || (a.issuer + " " + a.label).toLowerCase().indexOf(q) >= 0; });
-    var ul = $("#list");
-    ul.replaceChildren();
-    rows.clear();
-    list.forEach(function (a) { var r = buildRow(a); rows.set(a.id, r); ul.append(r.el); });
-    ul.hidden = list.length === 0;
-    $("#empty").hidden = S.accounts.length > 0;
-    $("#noMatch").hidden = !(S.accounts.length > 0 && list.length === 0);
-    $("#count").textContent = S.accounts.length + (S.accounts.length === 1 ? " key" : " keys") + " · click a code to copy it";
-    renderFoot();
-    tick();
-  }
-
-  function renderFoot() {
-    var foot = $("#foot");
-    foot.replaceChildren();
-    foot.append(h("span", { text: "Codes are calculated on this device. Nothing is sent anywhere." }));
-    var b = h("button", { class: "linkbtn", type: "button", text: prefs.lastBackup ? "Last backup " + fmtDate(prefs.lastBackup) : "No backup yet. Make one" });
-    b.addEventListener("click", openBackup);
-    foot.append(b);
-  }
-
-  async function copyCode(r) {
-    if (!r.code) return;
-    try {
-      await navigator.clipboard.writeText(r.code);
-      toast("Copied " + groupCode(r.code));
-    } catch (e) {
-      var rg = document.createRange();
-      rg.selectNodeContents(r.digits);
-      var sel = getSelection();
-      sel.removeAllRanges(); sel.addRange(rg);
-      toast("Selected. Press Ctrl+C or ⌘C to copy.");
-    }
-    r.el.classList.add("flash");
-    setTimeout(function () { r.el.classList.remove("flash"); }, 500);
-  }
-
-  $("#q").addEventListener("input", render);
-
-  /* ---------- ticking ---------- */
-  var heroKey = null, heroCounter = -1;
-  async function heroTick(now) {
-    if (lockView.hidden) return;
-    var sec = now / 1000, rem = 30 - (sec % 30);
-    $("#heroArc").style.strokeDashoffset = String(C * (1 - rem / 30));
-    $("#heroSec").textContent = String(Math.ceil(rem));
-    var counter = Math.floor(sec / 30);
-    if (heroCounter !== counter) {
-      heroCounter = counter;
-      if (!heroKey) heroKey = await hmacKey(base32Decode(DEMO), "SHA1");
-      $("#heroCode").textContent = groupCode(await hotpFromKey(heroKey, counter, 6));
-    }
-  }
-
-  async function updateRow(r, now) {
-    var a = r.a, sec = now / 1000, period = a.period;
-    var rem = period - (sec % period);
-    var counter = Math.floor(sec / period);
-    r.arc.style.strokeDashoffset = String(C * (1 - rem / period));
-    r.sec.textContent = String(Math.ceil(rem));
-    var urgent = rem <= 5;
-    if (urgent !== r.urgent) { r.urgent = urgent; r.el.classList.toggle("urgent", urgent); }
-    var key;
-    if (r.counter !== counter) {
-      r.counter = counter;
-      key = await keyFor(a);
-      var code = await hotpFromKey(key, counter, a.digits);
-      if (!S.key || r.counter !== counter) return;
-      r.code = code;
-      r.digits.textContent = groupCode(code);
-    }
-    if (rem > 7) {
-      if (!r.next.hidden) r.next.hidden = true;
-      r.nextCounter = -1;
-    } else if (r.nextCounter !== counter + 1) {
-      r.nextCounter = counter + 1;
-      key = key || await keyFor(a);
-      var nc = await hotpFromKey(key, counter + 1, a.digits);
-      if (!S.key) return;
-      r.next.textContent = "next " + groupCode(nc);
-      r.next.hidden = false;
-    }
-  }
-
-  async function previewEntry(li, now) {
-    var out = fld(li, ".prev");
-    var raw = fld(li, ".k-secret").value;
-    var secret = normSecret(raw);
-    if (/^otpauth/i.test(raw.trim()) || secret.length < 8) { out.hidden = true; return; }
-    var algo = fld(li, ".k-algo").value;
-    var c = prevCache.get(li);
-    try {
-      if (!c || c.sig !== secret + algo) {
-        c = { sig: secret + algo, key: await hmacKey(base32Decode(secret), algo) };
-        prevCache.set(li, c);
-      }
-    } catch (e) {
-      prevCache.delete(li);
-      out.textContent = "The setup key has characters outside A to Z and 2 to 7.";
-      out.classList.add("bad");
-      out.hidden = false;
-      return;
-    }
-    var period = Math.max(1, Math.min(300, parseInt(fld(li, ".k-period").value, 10) || 30));
-    var code = await hotpFromKey(c.key, Math.floor(now / 1000 / period), Number(fld(li, ".k-digits").value));
-    out.classList.remove("bad");
-    out.textContent = "Code right now: " + groupCode(code) + ". It should match the service's own app.";
-    out.hidden = false;
-  }
-  async function previewTick(now) {
-    await Promise.all(entries().map(function (li) { return previewEntry(li, now); }));
-  }
-
-  var ticking = false;
-  async function tick() {
-    if (ticking) return;
-    ticking = true;
-    try {
-      var now = Date.now();
-      await heroTick(now);
-      if (!S.key) return;
-      if (prefs.autolock > 0 && now - lastActive > prefs.autolock * 60000) {
-        lock("Locked after " + prefs.autolock + (prefs.autolock === 1 ? " minute" : " minutes") + " of inactivity.");
-        return;
-      }
-      var all = [];
-      rows.forEach(function (r) { all.push(updateRow(r, now)); });
-      await Promise.all(all);
-      if ($("#addDlg").open) await previewTick(now);
-    } catch (e) {
-    } finally { ticking = false; }
-  }
-  ["pointerdown", "keydown", "touchstart", "wheel"].forEach(function (t) {
-    addEventListener(t, function () { lastActive = Date.now(); }, { passive: true });
-  });
-
-  /* ---------- add ---------- */
-  function setTab(which) {
-    var key = which === "key";
-    $("#tabKey").setAttribute("aria-selected", String(key));
-    $("#tabLink").setAttribute("aria-selected", String(!key));
-    $("#keyForm").hidden = !key;
-    $("#linkForm").hidden = key;
-  }
-  $("#tabKey").addEventListener("click", function () { setTab("key"); });
-  $("#tabLink").addEventListener("click", function () { setTab("link"); });
-
-  var entrySeq = 0, prevCache = new WeakMap();
-  function entries() { return Array.prototype.slice.call($("#entries").children); }
-  function fld(li, c) { return li.querySelector(c); }
-  function isBlank(li) {
-    return !fld(li, ".k-issuer").value.trim() && !fld(li, ".k-label").value.trim() && !fld(li, ".k-secret").value.trim();
-  }
-  function buildEntry() {
-    var n = ++entrySeq;
-    var id = function (s) { return "k" + n + s; };
-    var li = document.createElement("li");
-    li.className = "entry";
-    li.innerHTML =
-      '<div class="entry-head"><span class="entry-no"></span><button class="icon rm" type="button">×</button></div>' +
-      '<div class="entry-grid">' +
-        '<div class="field"><label for="' + id("i") + '">Service</label><input id="' + id("i") + '" class="k-issuer" maxlength="80" placeholder="GitHub"></div>' +
-        '<div class="field"><label for="' + id("l") + '">Account</label><input id="' + id("l") + '" class="k-label" maxlength="120" placeholder="you@example.com"></div>' +
-      '</div>' +
-      '<div class="field"><label for="' + id("s") + '">Setup key</label><input id="' + id("s") + '" class="k-secret mono-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="JBSW Y3DP EHPK 3PXP or an otpauth:// link"></div>' +
-      '<p class="prev" hidden></p>' +
-      '<details><summary>Advanced</summary><div class="row2">' +
-        '<div class="field"><label for="' + id("a") + '">Algorithm</label><select id="' + id("a") + '" class="k-algo"><option>SHA1</option><option>SHA256</option><option>SHA512</option></select></div>' +
-        '<div class="field"><label for="' + id("d") + '">Digits</label><select id="' + id("d") + '" class="k-digits"><option>6</option><option>7</option><option>8</option></select></div>' +
-        '<div class="field"><label for="' + id("p") + '">Seconds</label><input id="' + id("p") + '" class="k-period" type="number" min="1" max="300" value="30" inputmode="numeric"></div>' +
-      '</div></details>' +
-      '<p class="err entry-err" role="alert"></p>';
-    fld(li, ".rm").addEventListener("click", function () { removeEntry(li); });
-    fld(li, ".k-secret").addEventListener("input", function () {
-      fld(li, ".entry-err").textContent = "";
-      fillFromLink(li);
-      previewEntry(li, Date.now());
-    });
-    [".k-algo", ".k-digits", ".k-period"].forEach(function (c) {
-      fld(li, c).addEventListener("input", function () { previewEntry(li, Date.now()); });
-    });
-    li.addEventListener("input", updateEntryUi);
-    return li;
-  }
-  function updateEntryUi() {
-    var list = entries(), many = list.length > 1;
-    list.forEach(function (li, i) {
-      fld(li, ".entry-head").hidden = !many;
-      fld(li, ".entry-no").textContent = "Key " + (i + 1);
-      fld(li, ".rm").setAttribute("aria-label", "Remove key " + (i + 1));
-    });
-    var filled = list.filter(function (li) { return !isBlank(li); }).length;
-    $("#keySubmit").textContent = filled > 1 ? "Save " + filled + " keys" : "Save key";
-  }
-  function addEntry() {
-    var li = buildEntry();
-    $("#entries").append(li);
-    updateEntryUi();
-    fld(li, ".k-issuer").focus();
-  }
-  function removeEntry(li) {
-    var list = entries();
-    var i = list.indexOf(li);
-    li.remove();
-    if (!entries().length) $("#entries").append(buildEntry());
-    updateEntryUi();
-    var rest = entries();
-    fld(rest[Math.min(i, rest.length - 1)], ".k-issuer").focus();
-  }
-  function resetEntries() {
-    $("#entries").replaceChildren(buildEntry());
-    updateEntryUi();
-  }
-  function fillFromLink(li) {
-    var inp = fld(li, ".k-secret"), raw = inp.value.trim();
-    if (!/^otpauth(-migration)?:\/\//i.test(raw)) return;
-    try {
-      var p = parseOtpauth(raw);
-      inp.value = normSecret(p.secret);
-      if (!fld(li, ".k-issuer").value.trim()) fld(li, ".k-issuer").value = p.issuer;
-      if (!fld(li, ".k-label").value.trim()) fld(li, ".k-label").value = p.label;
-      var algo = String(p.algo).toUpperCase(), digits = String(p.digits), period = String(parseInt(p.period, 10) || 30);
-      if (ALGS[algo]) fld(li, ".k-algo").value = algo;
-      if (["6", "7", "8"].indexOf(digits) >= 0) fld(li, ".k-digits").value = digits;
-      fld(li, ".k-period").value = period;
-      if (algo !== "SHA1" || digits !== "6" || period !== "30") fld(li, "details").open = true;
-    } catch (x) {
-      fld(li, ".entry-err").textContent = x.user ? x.message : "That link couldn't be read.";
-    }
-  }
-
-  function openAdd() {
-    $("#linkForm").reset();
-    $("#keyErr").textContent = ""; $("#linkErr").textContent = "";
-    resetEntries();
-    setTab("key");
-    openDlg($("#addDlg"));
-    setTimeout(function () { var f = $("#entries .k-issuer"); if (f) f.focus(); }, 0);
-  }
-  $("#btnAdd").addEventListener("click", openAdd);
-  $("#emptyAdd").addEventListener("click", openAdd);
-  $("#addClose").addEventListener("click", function () { $("#addDlg").close(); });
-  $("#addEntry").addEventListener("click", addEntry);
-
-  $("#keyForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var err = $("#keyErr");
-    err.textContent = "";
-    var list = entries(), batch = [], firstBad = null;
-    list.forEach(function (li) {
-      var e = fld(li, ".entry-err");
-      e.textContent = "";
-      if (isBlank(li)) return;
-      try {
-        var raw = fld(li, ".k-secret").value.trim();
-        if (/^otpauth/i.test(raw)) parseOtpauth(raw);
-        var a = makeAccount({
-          issuer: fld(li, ".k-issuer").value, label: fld(li, ".k-label").value, secret: raw,
-          algo: fld(li, ".k-algo").value, digits: fld(li, ".k-digits").value, period: fld(li, ".k-period").value
-        });
-        if (isDup(a)) throw uerr("This key is already in your vault.");
-        var twice = batch.some(function (b) {
-          return b.secret === a.secret && b.algo === a.algo && b.digits === a.digits && b.period === a.period;
-        });
-        if (twice) throw uerr("This key is entered twice above.");
-        batch.push(a);
-      } catch (x) {
-        e.textContent = x.user ? x.message : "This key couldn't be read.";
-        if (!firstBad) firstBad = li;
-      }
-    });
-    if (firstBad) {
-      var n = list.filter(function (li) { return fld(li, ".entry-err").textContent; }).length;
-      err.textContent = (n === 1 ? "Fix the key marked above." : "Fix the " + n + " keys marked above.") + " Nothing has been saved yet.";
-      fld(firstBad, ".k-secret").focus();
-      return;
-    }
-    if (!batch.length) { err.textContent = "Enter a setup key to save."; return; }
-    Array.prototype.push.apply(S.accounts, batch);
-    await persist();
-    render();
-    $("#addDlg").close();
-    toast(batch.length === 1 ? "Added " + nameOf(batch[0]) : "Added " + batch.length + " keys");
-  });
-
-  $("#linkForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var err = $("#linkErr"); err.textContent = "";
-    var lines = $("#lLinks").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!lines.length) { err.textContent = "Paste at least one otpauth:// link."; return; }
-    var added = 0, dups = 0, problems = [];
-    lines.forEach(function (ln) {
-      try {
-        var a = makeAccount(parseOtpauth(ln));
-        if (isDup(a)) { dups++; return; }
-        S.accounts.push(a); added++;
-      } catch (e) {
-        var m = e.user ? e.message : "One link could not be read.";
-        if (problems.indexOf(m) < 0) problems.push(m);
-      }
-    });
-    if (added) { await persist(); render(); toast("Added " + added + (added === 1 ? " key" : " keys")); }
-    if (dups) problems.unshift(dups + (dups === 1 ? " key is" : " keys are") + " already in your vault.");
-    if (problems.length) err.textContent = problems.join(" ");
-    else $("#addDlg").close();
-  });
-
-  function decodeQr(file) {
-    return new Promise(function (resolve, reject) {
-      if (typeof jsQR !== "function") { reject(uerr("QR reading isn't available here. Paste the otpauth:// link instead.")); return; }
-      var img = new Image();
-      var url = URL.createObjectURL(file);
-      img.onload = function () {
-        var sc = Math.min(1, 1400 / Math.max(img.width, img.height));
-        var w = Math.max(1, Math.round(img.width * sc)), hh = Math.max(1, Math.round(img.height * sc));
-        var cv = document.createElement("canvas");
-        cv.width = w; cv.height = hh;
-        var ctx = cv.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0, w, hh);
-        var res = jsQR(ctx.getImageData(0, 0, w, hh).data, w, hh, { inversionAttempts: "attemptBoth" });
-        URL.revokeObjectURL(url);
-        if (res && res.data) resolve(res.data); else reject(uerr("No QR code found in that image. Try a sharper, closer screenshot."));
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(uerr("That file couldn't be opened as an image.")); };
-      img.src = url;
-    });
-  }
-  $("#lFile").addEventListener("change", async function (ev) {
-    var files = Array.prototype.slice.call(ev.target.files || []);
-    ev.target.value = "";
-    if (!files.length) return;
-    var err = $("#linkErr");
-    err.textContent = "";
-    if (typeof jsQR !== "function") { err.textContent = "QR reading isn't available here. Paste the otpauth:// links instead."; return; }
-    var found = [], missed = [];
-    for (var i = 0; i < files.length; i++) {
-      try { found.push(await decodeQr(files[i])); } catch (e) { missed.push(files[i].name); }
-    }
-    if (found.length) {
-      var ta = $("#lLinks");
-      ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + found.join("\n");
-    }
-    if (missed.length) err.textContent = "No QR code found in " + missed.join(", ") + ". Try a sharper, closer screenshot.";
-  });
-
-  $("#emptyDemo").addEventListener("click", async function () {
-    var a = makeAccount({ issuer: "Example", label: "RFC 6238 test key (safe to delete)", secret: DEMO });
-    if (!isDup(a)) { S.accounts.push(a); await persist(); render(); }
-  });
-
-  /* ---------- edit ---------- */
-  var editId = null;
-  function openEdit(id) {
-    var a = S.accounts.find(function (x) { return x.id === id; });
-    if (!a) return;
-    editId = id;
-    $("#eIssuer").value = a.issuer; $("#eLabel").value = a.label;
-    $("#eSpec").textContent = a.algo + " · " + a.digits + " digits · " + a.period + " second window · added " + fmtDate(a.added);
-    $("#eSecret").hidden = true; $("#eSecret").textContent = "";
-    $("#eReveal").textContent = "Show setup key";
-    $("#editErr").textContent = "";
-    $("#delBox").hidden = true;
-    openDlg($("#editDlg"));
-  }
-  $("#eReveal").addEventListener("click", function () {
-    var a = S.accounts.find(function (x) { return x.id === editId; });
-    if (!a) return;
-    var el = $("#eSecret");
-    if (el.hidden) { el.textContent = a.secret.replace(/(.{4})/g, "$1 ").trim(); el.hidden = false; $("#eReveal").textContent = "Hide setup key"; }
-    else { el.hidden = true; el.textContent = ""; $("#eReveal").textContent = "Show setup key"; }
-  });
-  $("#editForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var a = S.accounts.find(function (x) { return x.id === editId; });
-    if (!a) return;
-    var issuer = $("#eIssuer").value.trim(), label = $("#eLabel").value.trim();
-    if (!issuer && !label) { $("#editErr").textContent = "Enter a service name or an account."; return; }
-    a.issuer = issuer; a.label = label;
-    await persist();
-    render();
-    $("#editDlg").close();
-  });
-  $("#eDelete").addEventListener("click", function () { $("#delBox").hidden = false; });
-  $("#eDeleteNo").addEventListener("click", function () { $("#delBox").hidden = true; });
-  $("#eDeleteYes").addEventListener("click", async function () {
-    S.accounts = S.accounts.filter(function (x) { return x.id !== editId; });
-    keyCache.delete(editId);
-    await persist();
-    render();
-    $("#editDlg").close();
-    toast("Key deleted");
-  });
-
-  /* ---------- settings ---------- */
-  $("#btnSettings").addEventListener("click", function () {
-    $("#sLock").value = String(prefs.autolock);
-    $("#sErr").textContent = ""; $("#sOk").textContent = "";
-    $("#sNew").value = ""; $("#sNew2").value = ""; $("#sErase").value = ""; $("#sEraseBtn").disabled = true;
-    openDlg($("#settingsDlg"));
-  });
-  $("#sLock").addEventListener("change", function () { prefs.autolock = Number($("#sLock").value); savePrefs(); lastActive = Date.now(); });
-  $("#passForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var err = $("#sErr"), ok = $("#sOk");
-    err.textContent = ""; ok.textContent = "";
-    var p1 = $("#sNew").value;
-    if (p1.length < 10) { err.textContent = "Use at least 10 characters."; return; }
-    if (p1 !== $("#sNew2").value) { err.textContent = "The two passphrases don't match."; return; }
-    try {
-      var salt = crypto.getRandomValues(new Uint8Array(16));
-      S.key = await deriveKey(p1, salt, PBKDF_ITER);
-      S.salt = salt; S.iter = PBKDF_ITER;
-      await persist();
-      $("#sNew").value = ""; $("#sNew2").value = "";
-      ok.textContent = "Passphrase changed. Make a new backup so it matches.";
-    } catch (e) { err.textContent = "Couldn't change the passphrase. Try again."; }
-  });
-  $("#sErase").addEventListener("input", function () { $("#sEraseBtn").disabled = $("#sErase").value !== "ERASE"; });
-  $("#sEraseBtn").addEventListener("click", function () {
-    lsDel(LS_VAULT);
-    envelope = null; damaged = false;
-    lock("Vault erased. Create a new one when you're ready.");
-  });
-
-  /* ---------- backup ---------- */
-  var downloads = null;
-  (async function () {
-    try {
-      if (window.claude && window.claude.use) downloads = await window.claude.use("downloads");
-    } catch (e) { downloads = null; }
-  })();
-
-  function openBackup() {
-    $("#bText").value = envelope ? JSON.stringify(envelope, null, 2) : "";
-    $("#bErr").textContent = ""; $("#iErr").textContent = ""; $("#iOk").textContent = "";
-    $("#iText").value = ""; $("#iPass").value = ""; $("#iFile").value = "";
-    $("#bLast").textContent = prefs.lastBackup ? "Last backup: " + fmtDate(prefs.lastBackup) + "." : "You haven't made a backup yet.";
-    openDlg($("#backupDlg"));
-  }
-  function markBackup() { prefs.lastBackup = Date.now(); savePrefs(); renderFoot(); $("#bLast").textContent = "Last backup: " + fmtDate(prefs.lastBackup) + "."; }
-  $("#btnBackup").addEventListener("click", openBackup);
-  $("#bSave").addEventListener("click", async function () {
-    var text = $("#bText").value;
-    if (!text) { $("#bErr").textContent = "There is nothing to back up yet."; return; }
-    $("#bErr").textContent = "";
-    var d = new Date(), pad = function (n) { return String(n).padStart(2, "0"); };
-    var name = "keyring-backup-" + d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + ".json";
-    try {
-      if (downloads) {
-        await downloads.save({ filename: name, data: text });
-      } else {
-        var url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-        var a = document.createElement("a");
-        a.href = url; a.download = name;
-        document.body.append(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      }
-      markBackup();
-      toast("Backup saved");
-    } catch (e) {
-      if (e && e.code === "declined") return;
-      $("#bErr").textContent = "Saving a file isn't available here. Use Copy text and keep it somewhere safe.";
-    }
-  });
-  $("#bCopy").addEventListener("click", async function () {
-    var ta = $("#bText");
-    if (!ta.value) { $("#bErr").textContent = "There is nothing to back up yet."; return; }
-    $("#bErr").textContent = "";
-    try { await navigator.clipboard.writeText(ta.value); markBackup(); toast("Backup text copied"); }
-    catch (e) { ta.focus(); ta.select(); $("#bErr").textContent = "Selected. Press Ctrl+C or ⌘C to copy it."; }
-  });
-  $("#iFile").addEventListener("change", async function (ev) {
-    var f = ev.target.files[0];
-    if (f) $("#iText").value = await f.text();
-  });
-  $("#importForm").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var err = $("#iErr"), ok = $("#iOk");
-    err.textContent = ""; ok.textContent = "";
-    var env;
-    try { env = checkEnvelope(JSON.parse($("#iText").value)); }
-    catch (e) { err.textContent = "That doesn't look like a 2FA Keyring backup."; return; }
-    var r;
-    try { r = await openEnvelope(env, $("#iPass").value); }
-    catch (e) { err.textContent = "That passphrase doesn't open this backup."; return; }
-    var incoming = sanitizeAccounts(r.data.accounts), added = 0;
-    incoming.forEach(function (a) { if (!isDup(a)) { S.accounts.push(a); added++; } });
-    if (added) { await persist(); render(); $("#bText").value = envelope ? JSON.stringify(envelope, null, 2) : ""; }
-    ok.textContent = added ? "Merged " + added + (added === 1 ? " key." : " keys.") + (incoming.length - added ? " " + (incoming.length - added) + " were already here." : "")
-      : "Nothing new to add. Every key in that backup is already in your vault.";
-    $("#iPass").value = "";
-  });
-
-  $("#btnLock").addEventListener("click", function () { lock("Vault locked."); });
-
-  /* ---------- boot ---------- */
-  loadStored();
-  showLock("");
-  updateStorageNote(!storageOK);
-  setInterval(tick, 250);
-  tick();
-})();
-</script>
-
+</footer>
 </body>
 </html>

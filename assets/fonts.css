@@ -1,0 +1,12 @@
+/* Self-hosted fonts (SIL Open Font License 1.1, see LICENSE files in this folder).
+   Served from this site so no request ever goes to a font CDN. */
+@font-face{
+  font-family:"Bricolage Grotesque";
+  src:url("fonts/bricolage-grotesque.woff2") format("woff2-variations"),url("fonts/bricolage-grotesque.woff2") format("woff2");
+  font-weight:200 800;font-stretch:75% 100%;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"JetBrains Mono";
+  src:url("fonts/jetbrains-mono.woff2") format("woff2-variations"),url("fonts/jetbrains-mono.woff2") format("woff2");
+  font-weight:100 800;font-style:normal;font-display:swap;
+}

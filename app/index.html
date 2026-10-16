@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>2FA Keyring</title>
+<meta name="description" content="Your two-factor codes, encrypted on your own device.">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="stylesheet" href="app.css">
+<script src="../assets/vendor/jsQR.js" defer></script>
+<script src="../assets/totp.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<noscript><p class="blocked">2FA Keyring needs JavaScript to calculate codes and encrypt your vault. Turn JavaScript on for this site and reload.</p></noscript>
+<div id="blocked" class="blocked" hidden>
+  <h1 id="blockedTitle"></h1>
+  <p class="muted" id="blockedText"></p>
+</div>
+<main id="lockView" class="wrap" hidden>
+  <div class="lock">
+    <section class="intro">
+      <p class="brand"><a href="../">2FA Keyring</a></p>
+      <h1>Every two-factor code, encrypted in one place.</h1>
+      <p class="lede">Add the setup key from each service. Codes are calculated on this device, and the vault is locked with a passphrase only you know.</p>
+      <div class="live" aria-label="Live example code">
+        <div>
+          <p class="tag">Example · RFC 6238 test key</p>
+          <p class="bigcode" id="heroCode">--- ---</p>
+        </div>
+        <div class="ringwrap">
+          <svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" id="heroArc" cx="18" cy="18" r="15" transform="rotate(-90 18 18)"/></svg>
+          <span class="sec" id="heroSec">30</span>
+        </div>
+      </div>
+      <dl class="specs">
+        <div><dt>Algorithms</dt><dd>SHA-1 · 256 · 512</dd></div>
+        <div><dt>Digits</dt><dd>6 · 7 · 8</dd></div>
+        <div><dt>Window</dt><dd>30 s default</dd></div>
+      </dl>
+    </section>
+
+    <section class="lock-card">
+      <h2 id="lockTitle">Unlock your vault</h2>
+      <p class="muted" id="lockHelp"></p>
+      <p class="note storageNote" hidden>This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup after adding keys.</p>
+      <form id="lockForm" autocomplete="off">
+        <div class="field">
+          <label for="pass">Passphrase</label>
+          <input id="pass" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="field" id="strengthWrap" hidden>
+          <div class="meter" id="meter" aria-hidden="true"><span></span></div>
+          <p class="strength" id="strength" aria-live="polite"></p>
+        </div>
+        <div class="field" id="pass2Wrap" hidden>
+          <label for="pass2">Confirm passphrase</label>
+          <input id="pass2" type="password" autocomplete="new-password">
+        </div>
+        <p class="err" id="lockErr" role="alert"></p>
+        <p class="small muted" id="lockNote"></p>
+        <button class="btn primary" id="lockBtn" type="submit">Unlock</button>
+      </form>
+      <div id="restoreBox" hidden>
+        <button class="linkbtn" id="restoreToggle" type="button">Restore from an encrypted backup</button>
+        <form id="restoreForm" hidden autocomplete="off">
+          <div class="field">
+            <label for="rText">Backup text</label>
+            <textarea id="rText" class="backup-text" spellcheck="false" placeholder="Paste the backup contents, or choose the file below"></textarea>
+          </div>
+          <div class="field">
+            <label for="rFile">Backup file</label>
+            <input id="rFile" type="file" accept=".json,application/json,text/plain">
+          </div>
+          <div class="field">
+            <label for="rPass">Backup passphrase</label>
+            <input id="rPass" type="password" autocomplete="off">
+          </div>
+          <p class="err" id="rErr" role="alert"></p>
+          <button class="btn" id="rBtn" type="submit">Restore vault</button>
+        </form>
+      </div>
+      <div id="damagedBox" hidden>
+        <p class="small muted">Starting over deletes the unreadable vault stored in this browser.</p>
+        <button class="btn danger" id="discardBtn" type="button">Discard it and start fresh</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="appView" class="app" hidden>
+  <header class="topbar">
+    <div class="topbar-row">
+      <div>
+        <h1>2FA Keyring</h1>
+        <p class="muted small"><span id="count"></span> · <a class="about" href="../security.html">How your keys are protected</a></p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="btnAdd" type="button">Add key</button>
+        <button class="btn" id="btnBackup" type="button">Backup</button>
+        <button class="btn" id="btnSettings" type="button">Settings</button>
+        <button class="btn" id="btnLock" type="button">Lock</button>
+      </div>
+    </div>
+    <input id="q" type="search" placeholder="Search services or accounts" aria-label="Search keys" autocomplete="off">
+  </header>
+
+  <p class="note storageNote gap-b" hidden>This browser is blocking storage, so keys will not survive closing this page. Save an encrypted backup now.</p>
+  <ul id="list" class="list"></ul>
+  <section id="empty" class="empty" hidden>
+    <h2>No keys yet</h2>
+    <p>Add as many services as you like, several at a time. Each needs its setup key (the text code shown beside the QR code), an otpauth:// link, or a QR screenshot.</p>
+    <div class="btns">
+      <button class="btn primary" id="emptyAdd" type="button">Add your first key</button>
+      <button class="btn" id="emptyDemo" type="button">Try an example key</button>
+    </div>
+  </section>
+  <p id="noMatch" class="muted nomatch" hidden>No keys match that search.</p>
+  <p class="foot" id="foot"></p>
+</div>
+
+<dialog id="addDlg" aria-labelledby="addTitle">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="addTitle">Add keys</h2><button class="icon" id="addClose" type="button" aria-label="Close">×</button></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabKey" type="button" aria-selected="true" aria-controls="keyForm">Setup keys</button>
+      <button role="tab" id="tabLink" type="button" aria-selected="false" aria-controls="linkForm">Links or QR images</button>
+    </div>
+    <form id="keyForm" role="tabpanel" aria-labelledby="tabKey" autocomplete="off">
+      <ol id="entries" class="entries"></ol>
+      <button class="linkbtn addmore" id="addEntry" type="button">+ Add another key</button>
+      <p class="err" id="keyErr" role="alert"></p>
+      <div class="btns"><button class="btn primary" id="keySubmit" type="submit">Save key</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
+    </form>
+    <form id="linkForm" role="tabpanel" aria-labelledby="tabLink" hidden autocomplete="off">
+      <div class="field"><label for="lLinks">otpauth:// links, one per line</label><textarea id="lLinks" rows="4" class="mono-in" spellcheck="false" placeholder="otpauth://totp/GitHub:you@example.com?secret=...&amp;issuer=GitHub"></textarea></div>
+      <div class="field"><label for="lFile">Or choose QR code screenshots (you can pick several)</label><input id="lFile" type="file" accept="image/*" multiple></div>
+      <p class="err" id="linkErr" role="alert"></p>
+      <div class="btns"><button class="btn primary" type="submit">Add</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="editDlg" aria-labelledby="editTitle">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="editTitle">Edit key</h2><button class="icon" type="button" aria-label="Close" data-close="editDlg">×</button></div>
+    <form id="editForm" autocomplete="off">
+      <div class="field"><label for="eIssuer">Service</label><input id="eIssuer" maxlength="80"></div>
+      <div class="field"><label for="eLabel">Account</label><input id="eLabel" maxlength="120"></div>
+      <p class="small muted" id="eSpec"></p>
+      <div>
+        <button class="linkbtn" id="eReveal" type="button">Show setup key</button>
+        <p class="secret-reveal" id="eSecret" hidden></p>
+      </div>
+      <p class="err" id="editErr" role="alert"></p>
+      <div class="btns">
+        <button class="btn primary" type="submit">Save</button>
+        <button class="btn" type="button" data-close="editDlg">Cancel</button>
+        <button class="btn danger" id="eDelete" type="button">Delete key</button>
+      </div>
+      <div class="delbox" id="delBox" hidden>
+        <p class="small">Delete this key? You will not be able to generate its codes again unless you kept the service's recovery codes or setup key.</p>
+        <div class="btns"><button class="btn danger" id="eDeleteYes" type="button">Yes, delete it</button><button class="btn" id="eDeleteNo" type="button">Keep it</button></div>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="settingsDlg" aria-labelledby="setTitle">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="setTitle">Settings</h2><button class="icon" type="button" aria-label="Close" data-close="settingsDlg">×</button></div>
+    <section>
+      <h3>Auto-lock</h3>
+      <div class="field">
+        <label for="sLock">Lock the vault after inactivity</label>
+        <select id="sLock"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="0">Never</option></select>
+      </div>
+      <label class="check" for="sHidden"><input type="checkbox" id="sHidden"><span>Also lock as soon as I switch to another tab or app</span></label>
+    </section>
+    <section>
+      <h3>Change passphrase</h3>
+      <form id="passForm" autocomplete="off">
+        <div class="field"><label for="sNew">New passphrase</label><input id="sNew" type="password" autocomplete="new-password"></div>
+        <div class="field"><label for="sNew2">Confirm new passphrase</label><input id="sNew2" type="password" autocomplete="new-password"></div>
+        <p class="err" id="sErr" role="alert"></p>
+        <p class="ok" id="sOk" role="status"></p>
+        <div class="btns"><button class="btn" type="submit">Change passphrase</button></div>
+      </form>
+      <p class="small muted">Use at least 12 characters. Several random words are easy to remember and hard to guess. Older backups still open with the passphrase they were made with.</p>
+    </section>
+    <section>
+      <h3>Erase vault</h3>
+      <p class="small muted">Deletes every key stored in this browser. Make a backup first if you may need them.</p>
+      <div class="field"><label for="sErase">Type ERASE to confirm</label><input id="sErase" autocomplete="off" spellcheck="false"></div>
+      <div class="btns"><button class="btn danger" id="sEraseBtn" type="button" disabled>Erase vault</button></div>
+    </section>
+  </div>
+</dialog>
+
+<dialog id="backupDlg" aria-labelledby="bkTitle">
+  <div class="dlg">
+    <div class="dlg-head"><h2 id="bkTitle">Backup</h2><button class="icon" type="button" aria-label="Close" data-close="backupDlg">×</button></div>
+    <section>
+      <h3>Export an encrypted backup</h3>
+      <p class="small muted">The backup stays encrypted with your passphrase. Without that passphrase it cannot be opened. <span id="bLast"></span></p>
+      <textarea id="bText" class="backup-text" readonly spellcheck="false" aria-label="Encrypted backup text"></textarea>
+      <div class="btns">
+        <button class="btn primary" id="bSave" type="button">Save file</button>
+        <button class="btn" id="bCopy" type="button">Copy text</button>
+      </div>
+      <p class="err" id="bErr" role="alert"></p>
+    </section>
+    <section>
+      <h3>Import and merge a backup</h3>
+      <form id="importForm" autocomplete="off">
+        <div class="field"><label for="iFile">Backup file</label><input id="iFile" type="file" accept=".json,application/json,text/plain"></div>
+        <div class="field"><label for="iText">Or paste the backup text</label><textarea id="iText" class="backup-text" spellcheck="false"></textarea></div>
+        <div class="field"><label for="iPass">Backup passphrase</label><input id="iPass" type="password" autocomplete="off"></div>
+        <p class="err" id="iErr" role="alert"></p>
+        <p class="ok" id="iOk" role="status"></p>
+        <div class="btns"><button class="btn" type="submit">Merge into vault</button></div>
+      </form>
+    </section>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
