@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>2FA Keyring Terms of Use</title>
+<meta name="description" content="The terms for using the 2FA Keyring website and app: your responsibilities, no recovery, no warranty and limits of liability.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="./#how">How it works</a>
+      <a href="security.html">Security</a>
+      <a class="hide-sm" href="./#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker">Legal</p>
+      <h1>Terms of Use</h1>
+      <p class="lead">These terms explain what 2FA Keyring is, what you're responsible for when you use it, and the limits of what it promises. They're written to be read, so please take a few minutes to go through them.</p>
+      <p class="meta">Effective 16 October 2026 · Applies to the 2FA Keyring website and app</p>
+    </div>
+  </div>
+
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#accept">Accepting these terms</a>
+      <a href="#service">What 2FA Keyring is</a>
+      <a href="#responsible">Your responsibilities</a>
+      <a href="#recovery">No recovery</a>
+      <a href="#use">Acceptable use</a>
+      <a href="#availability">Availability and changes</a>
+      <a href="#source">Open source</a>
+      <a href="#thirdparty">Other services and trademarks</a>
+      <a href="#warranty">No warranty</a>
+      <a href="#liability">Limitation of liability</a>
+      <a href="#changes">Changes to these terms</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <article class="prose">
+      <h2 id="accept">Accepting these terms</h2>
+      <p>By using the 2FA Keyring website or app, you agree to these terms and to the <a href="privacy.html">Privacy Policy</a>. If you don't agree, please don't use them. In these terms, "we" and "us" refer to the 2FA Keyring project and its maintainer, and "you" refers to anyone using the website or app.</p>
+
+      <h2 id="service">What 2FA Keyring is</h2>
+      <p>2FA Keyring is a free authenticator that runs entirely in your web browser. It generates time-based one-time passwords (TOTP, RFC 6238) from setup keys you add, and stores those keys encrypted on your device. There are no accounts, and we don't operate any server that stores your data. How it works is described on the <a href="security.html">security page</a>.</p>
+
+      <h2 id="responsible">Your responsibilities</h2>
+      <p>Because your keys exist only on your device, keeping access to them is in your hands. You're responsible for:</p>
+      <ul>
+        <li><b>Your passphrase:</b> choosing a strong passphrase and remembering it</li>
+        <li><b>Backups:</b> exporting encrypted backups and keeping them somewhere safe</li>
+        <li><b>Recovery codes:</b> keeping each service's recovery codes separately from this app, so you can sign in if you lose access to your vault</li>
+        <li><b>Your device:</b> keeping your device, browser and extensions secure and up to date, and locking the vault when you step away</li>
+        <li><b>Your codes:</b> checking each code before relying on it, including that your device's clock is set correctly</li>
+      </ul>
+
+      <h2 id="recovery">No recovery</h2>
+      <div class="callout warn">
+        <b>We can't recover your passphrase, your keys or your vault.</b>
+        <p>We never have a copy of them. If you forget your passphrase, clear your browser's data, or lose your device without a backup, your keys can't be restored by us or anyone else. Use your services' recovery codes to regain access to your accounts.</p>
+      </div>
+
+      <h2 id="use">Acceptable use</h2>
+      <p>You may use 2FA Keyring only for accounts you own or are authorised to access, and only in ways that comply with the law and with the terms of the services you use it for. Don't use the website or app to gain unauthorised access to any account or system. Don't interfere with the website or its hosting, or attempt to distribute a modified copy of the app as if it were this one.</p>
+
+      <h2 id="availability">Availability and changes</h2>
+      <p>2FA Keyring is provided free of charge. We may change, update or stop offering the website or app at any time, without notice. We don't guarantee it will always be available or work in every browser. Keep a current backup, and remember you can also run your own copy from the public source code (see the <a href="security.html#selfhost">security page</a>).</p>
+
+      <h2 id="source">Open source</h2>
+      <p>The source code is public at <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">github.com/estuty/2FA-Keyring</a>. Reusing or redistributing the code is governed by the license published in that repository. Third-party components keep their own licenses: the jsQR library (Apache License 2.0), and the Bricolage Grotesque and JetBrains Mono fonts (SIL Open Font License 1.1). Their license files are included with the code.</p>
+
+      <h2 id="thirdparty">Other services and trademarks</h2>
+      <p>2FA Keyring isn't affiliated with, endorsed by or sponsored by any service you use it with. Names such as GitHub, Google, Microsoft, AWS, Discord and Dropbox are trademarks of their owners and are mentioned only to describe compatibility. The website is hosted by third-party providers (GitHub and Cloudflare), whose own terms apply to their services.</p>
+
+      <h2 id="warranty">No warranty</h2>
+      <p>The website and app are provided "as is" and "as available", without warranties of any kind, express or implied. This includes warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, and uninterrupted or error-free operation, to the fullest extent permitted by law. We work to keep 2FA Keyring correct and secure, but we don't promise that it's free of defects or vulnerabilities, or that it will meet your needs.</p>
+
+      <h2 id="liability">Limitation of liability</h2>
+      <p>To the fullest extent permitted by law, we're not liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of data, access, accounts, profits or business, arising from or related to your use of, or inability to use, the website or app. This includes being locked out of an account because a passphrase was forgotten, a vault was deleted or a backup was lost. Where liability can't be excluded, it's limited to the amount you paid to use 2FA Keyring, which is zero.</p>
+      <p>Some jurisdictions don't allow certain warranties or liabilities to be excluded or limited. In those places, the exclusions and limits above apply only as far as the law allows, and nothing in these terms affects rights you have that can't be waived.</p>
+
+      <h2 id="changes">Changes to these terms</h2>
+      <p>We may update these terms from time to time. The new version will be published on this page with a new effective date, and every past version stays in the project's public history on GitHub. If you keep using 2FA Keyring after a change, you accept the updated terms.</p>
+
+      <h2 id="contact">Contact</h2>
+      <p>For questions about these terms, open an issue on the <a href="https://github.com/estuty/2FA-Keyring/issues" rel="noopener noreferrer">project's GitHub page</a>. Please never include setup keys, backups or other secrets in an issue. To report a security problem privately, use <a href="security.html#report">GitHub's private vulnerability reporting</a>.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <nav aria-label="Footer">
+      <a href="app/">App</a>
+      <a href="security.html">Security</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="security.html#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

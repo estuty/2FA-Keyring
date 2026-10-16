@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>2FA Keyring Privacy Policy</title>
+<meta name="description" content="How 2FA Keyring handles your data: nothing is collected, your keys stay encrypted on your device, and what the website host can see.">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/chrome.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="chrome-wrap">
+    <a class="logo" href="./"><img src="assets/icon.svg" alt="" width="30" height="30">2FA Keyring</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="./#how">How it works</a>
+      <a href="security.html">Security</a>
+      <a class="hide-sm" href="./#faq">FAQ</a>
+      <a class="hide-sm" href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source</a>
+      <a class="nav-cta" href="app/">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="doc-hero">
+    <div class="wrap">
+      <p class="kicker">Legal</p>
+      <h1>Privacy Policy</h1>
+      <p class="lead">2FA Keyring is built so that we never receive your personal data. This policy explains what that means in practice: what stays on your device, what the website's host can see, and what you control.</p>
+      <p class="meta">Effective 16 October 2026 · Applies to the 2FA Keyring website and app</p>
+    </div>
+  </div>
+
+  <div class="wrap doc">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <a href="#summary">Summary</a>
+      <a href="#who">Who we are</a>
+      <a href="#collect">What we collect</a>
+      <a href="#device">What stays on your device</a>
+      <a href="#host">What the host can see</a>
+      <a href="#cookies">Cookies and tracking</a>
+      <a href="#yours">Data you move yourself</a>
+      <a href="#browser">Your browser's own features</a>
+      <a href="#rights">Your choices and rights</a>
+      <a href="#children">Children</a>
+      <a href="#changes">Changes to this policy</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <article class="prose">
+      <h2 id="summary">Summary</h2>
+      <div class="callout">
+        <b>We don't collect, store, sell or share your personal data.</b>
+        <p>Your two-factor keys, account names, passphrase and codes are handled only inside your browser, on your device. They're never sent to us or anyone else. There are no accounts, cookies, analytics, ads or third-party scripts.</p>
+      </div>
+
+      <h2 id="who">Who we are</h2>
+      <p>2FA Keyring is a free, open-source project maintained by its author on GitHub at <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">github.com/estuty/2FA-Keyring</a>. In this policy, "we" and "us" refer to the project and its maintainer, and "the app" refers to the 2FA Keyring web app at <code>/app/</code>.</p>
+      <p>The website is made of static files. We run no servers, databases or back-end code of our own. A hosting provider serves the files (see <a href="#host">What the host can see</a>).</p>
+
+      <h2 id="collect">What we collect</h2>
+      <p>Nothing. Specifically, we don't collect:</p>
+      <ul>
+        <li>your two-factor setup keys, codes, service names or account names</li>
+        <li>your vault passphrase</li>
+        <li>names, email addresses, phone numbers or any account details, because there are no accounts</li>
+        <li>usage statistics, analytics, crash reports or device fingerprints</li>
+      </ul>
+      <p>The app is technically prevented from sending data: its Content Security Policy blocks network connections (<code>connect-src 'none'</code>), and it loads no code from any other website. The <a href="security.html">security page</a> explains how this works and how to check it yourself.</p>
+
+      <h2 id="device">What stays on your device</h2>
+      <p>The app saves two items in your browser's local storage, on your device only:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>Contents</th><th>Protection</th></tr></thead>
+          <tbody>
+            <tr><td>Your vault</td><td>Your keys, with the service and account names you entered</td><td>Encrypted with AES-256-GCM using a key derived from your passphrase. Without the passphrase it's unreadable.</td></tr>
+            <tr><td>Settings</td><td>Auto-lock time, the "lock when I switch tabs" option and the date of your last backup</td><td>Not encrypted. Contains nothing personal.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>While the vault is unlocked, the decrypted keys exist only in the page's memory. They're cleared when the vault locks or the page closes. We can't see, access or recover anything stored on your device.</p>
+
+      <h2 id="host">What the host can see</h2>
+      <p>Like every website, this one has to be delivered by a hosting provider: GitHub Pages at <code>estuty.github.io</code>, or Cloudflare at <code>workers.dev</code>. When your browser requests the site's files, the provider receives standard request information:</p>
+      <ul>
+        <li>your IP address</li>
+        <li>your browser and operating system type (the user agent)</li>
+        <li>the date and time, and which files were requested</li>
+      </ul>
+      <p>These requests contain nothing you type or store in the app. The provider handles this information under its own privacy policy: the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener noreferrer">GitHub General Privacy Statement</a> or the <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener noreferrer">Cloudflare Privacy Policy</a>. We don't use this information to identify, profile or track visitors, and we don't combine it with any other data. A hosting dashboard may show the maintainer overall traffic figures, such as request counts.</p>
+
+      <h2 id="cookies">Cookies and tracking</h2>
+      <p>The website and app set no cookies. They use no analytics, advertising, social media widgets, tracking pixels or fingerprinting. Local storage is used only for your encrypted vault and settings, as described above, and never for tracking.</p>
+      <p>Because there are no non-essential cookies, there's no cookie banner to accept.</p>
+
+      <h2 id="yours">Data you move yourself</h2>
+      <p>Some actions in the app put data under your control outside the app:</p>
+      <ul>
+        <li><b>Backups.</b> An exported backup is a file or text that you save or copy. It stays encrypted with your passphrase. Where you keep it is up to you.</li>
+        <li><b>Copied codes.</b> Copying a code places it on your device's clipboard. Clipboard history or cloud clipboard sync on your device may keep it, though codes expire within their time period.</li>
+        <li><b>Showing a setup key.</b> When you choose to reveal a key, it's displayed on your screen only.</li>
+      </ul>
+
+      <h2 id="browser">Your browser's own features</h2>
+      <p>Your browser and operating system are separate from 2FA Keyring and have their own privacy settings. To reduce what they could send elsewhere, the app turns off spell check, autocorrect and page translation for its fields. If your browser offers to save your vault passphrase in a password manager that syncs to an online account, that passphrase is then protected by that account. Decide whether that's what you want.</p>
+
+      <h2 id="rights">Your choices and rights</h2>
+      <p>Because we hold no personal data about you, there's nothing for us to access, correct, export or delete on request. You stay in control of everything the app stores:</p>
+      <ul>
+        <li><b>Delete everything:</b> use <b>Settings → Erase vault</b> in the app, or clear this site's data in your browser settings.</li>
+        <li><b>Take your data elsewhere:</b> use <b>Backup</b> in the app. You can also reveal any key's setup key and add it to another authenticator.</li>
+      </ul>
+      <p>For information the hosting provider holds about requests to the site, such as server logs, contact that provider using the links in <a href="#host">What the host can see</a>.</p>
+
+      <h2 id="children">Children</h2>
+      <p>2FA Keyring isn't directed at children and collects no data from anyone, including children.</p>
+
+      <h2 id="changes">Changes to this policy</h2>
+      <p>If this policy changes, the new version will be published on this page with a new effective date. Every past version is kept in the project's public history on GitHub, so you can see exactly what changed and when. We won't change the app to collect personal data without saying so clearly on this page first.</p>
+
+      <h2 id="contact">Contact</h2>
+      <p>For questions about this policy, open an issue on the <a href="https://github.com/estuty/2FA-Keyring/issues" rel="noopener noreferrer">project's GitHub page</a>. Please don't include setup keys, backups or other secrets in an issue. To report a security problem privately, use <a href="security.html#report">GitHub's private vulnerability reporting</a>.</p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="chrome-wrap">
+    <p>2FA Keyring. No accounts, cookies, analytics or third-party code.</p>
+    <nav aria-label="Footer">
+      <a href="app/">App</a>
+      <a href="security.html">Security</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="security.html#report">Report a vulnerability</a>
+      <a href="https://github.com/estuty/2FA-Keyring" rel="noopener noreferrer">Source code</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

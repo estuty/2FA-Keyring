@@ -30,6 +30,8 @@ The [security page](security.html) covers the full threat model, its limits, and
 ```
 index.html          Website landing page
 security.html       Security model
+privacy.html        Privacy Policy
+terms.html          Terms of Use
 app/                The app (index.html, app.js, app.css)
 assets/totp.js      TOTP core shared by the app and the website's live example
 assets/site.css     Website styles
