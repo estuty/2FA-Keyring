@@ -1,6 +1,6 @@
 # 2FA Keyring
 
-A free, open-source authenticator that runs in your browser. It shows live two-factor (TOTP) codes for all your accounts and keeps every key encrypted on your own device, behind a passphrase only you know. There's no account, no server and no tracking.
+A free, open-source authenticator that runs in your browser. It shows live two-factor (TOTP) codes for all your accounts and keeps every key encrypted on your own device, behind a passphrase only you know. There's no account and no tracking, and your keys never leave your device.
 
 - **Live site:** <https://2fa-keyring.com>
 - **Website:** `index.html`
@@ -48,7 +48,7 @@ wrangler.jsonc      Cloudflare Workers static-assets config
 
 ## Publishing
 
-The site is plain static files, so it can be hosted in two ways. Cloudflare is recommended because it gives the app its own origin and real security headers.
+The site is plain static files. The official copy runs on Cloudflare, which gives the app its own origin and real security headers.
 
 ### Cloudflare Workers: `https://2fa-keyring.com` (the official site)
 
@@ -75,13 +75,9 @@ Cloudflare then sends the headers in `_headers` with every file:
 
 You can also deploy from your computer with `npx wrangler deploy` in the repository folder.
 
-### GitHub Pages: `https://estuty.github.io/2FA-Keyring/`
+### Hosting your own copy
 
-Settings → Pages → **Deploy from a branch**, with branch `main` and folder `/ (root)`. Tick **Enforce HTTPS**.
-
-- **No custom domain field:** leave the Custom domain field empty unless you own the domain and can add a DNS record for it. A `workers.dev` name can't be used there, because only Cloudflare controls its DNS.
-- **No security headers:** GitHub Pages can't send them, so the site relies on each page's `<meta>` policy and the app's own anti-framing check.
-- **Shared origin:** all GitHub Pages sites under `estuty.github.io` share one origin.
+Serve the folder from a domain or subdomain used for nothing else, and send the headers in `_headers`. Avoid shared origins such as `username.github.io`: every project site of that account shares one origin, and GitHub Pages can't send security headers. GitHub Pages is turned off for this repository for that reason.
 
 ### Private vulnerability reporting
 
