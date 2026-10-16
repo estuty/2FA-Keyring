@@ -238,9 +238,17 @@
   var lockView = $("#lockView"), appView = $("#appView");
   var mode = "create";
 
+  function setVaultState(open) {
+    var st = $("#vaultState");
+    st.setAttribute("data-state", open ? "unlocked" : "locked");
+    st.textContent = open ? "Vault unlocked" : "Vault locked";
+    $("#leaveNote").hidden = !open;
+  }
+
   function showLock(note) {
     appView.hidden = true;
     lockView.hidden = false;
+    setVaultState(false);
     mode = damaged ? "damaged" : envelope ? "unlock" : "create";
     $("#lockErr").textContent = "";
     $("#lockNote").textContent = note || "";
@@ -268,6 +276,7 @@
   function enterApp() {
     lockView.hidden = true;
     appView.hidden = false;
+    setVaultState(true);
     lastActive = Date.now();
     $("#q").value = "";
     render();
