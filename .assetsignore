@@ -1,0 +1,11 @@
+# Files that are part of the repository but not of the website
+.git
+.github
+.wrangler
+node_modules
+wrangler.jsonc
+.assetsignore
+README.md
+SECURITY.md
+CNAME
+.nojekyll

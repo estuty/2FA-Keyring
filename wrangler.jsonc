@@ -1,0 +1,14 @@
+// Cloudflare Workers deployment: serves this repository as static files at
+// https://2fa-keyring.<your-subdomain>.workers.dev with the security headers in _headers.
+// No Worker script runs. Cloudflare only serves the files.
+{
+  "name": "2fa-keyring",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}

@@ -129,7 +129,15 @@ form-action 'none'; object-src 'none'; manifest-src 'none'; worker-src 'none'</c
         <b>On GitHub Pages, the origin is shared</b>
         <p>All project sites under one <code>username.github.io</code> share an origin. Any other site published from the same GitHub account could read the encrypted vault, or script an open copy of the app. For strong isolation, serve the app from its own domain or subdomain, such as <code>2fa.example.com</code>, used for nothing else.</p>
       </div>
-      <p>GitHub Pages serves every file over HTTPS. Turn on "Enforce HTTPS" in the repository's Pages settings so the site is never served over plain HTTP.</p>
+      <p>When the site is served from Cloudflare, at <code>2fa-keyring.estuty777.workers.dev</code> or your own domain, it has an origin of its own. Cloudflare also sends HTTP security headers with every file:</p>
+      <ul>
+        <li><b>Content Security Policy:</b> the same policy as an HTTP header, plus <code>frame-ancestors 'none'</code> so no other site can frame the app</li>
+        <li><b>HTTPS only:</b> <code>Strict-Transport-Security</code> keeps browsers on HTTPS</li>
+        <li><b>File and frame safety:</b> <code>X-Content-Type-Options: nosniff</code> and <code>X-Frame-Options: DENY</code></li>
+        <li><b>Device features off:</b> a <code>Permissions-Policy</code> that turns off the camera, microphone, location and similar features</li>
+        <li><b>Cross-origin isolation:</b> <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Resource-Policy</code> isolate the page from other websites</li>
+      </ul>
+      <p>On GitHub Pages, every file is served over HTTPS, but custom headers aren't supported. There, the site relies on each page's meta policy and the app's own framing check. Turn on "Enforce HTTPS" in the repository's Pages settings.</p>
 
       <h2 id="backups">Backups</h2>
       <ul>

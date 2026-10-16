@@ -36,18 +36,47 @@ assets/site.css     Website styles
 assets/site.js      Website live example codes
 assets/fonts/       Self-hosted fonts and their licenses
 assets/vendor/      jsQR 1.4.0 and its license
+_headers            Security headers for Cloudflare hosting
+wrangler.jsonc      Cloudflare Workers static-assets config
+.assetsignore       Repository files that aren't deployed to Cloudflare
 ```
 
-## Publishing with GitHub Pages
+## Publishing
 
-1. **Make the repository public:** GitHub Pages on a free plan needs a public repository, and people can then check the code they're running.
-2. **Turn on Pages:** go to **Settings → Pages**, then under *Build and deployment* choose **Deploy from a branch**, with branch `main` and folder `/ (root)`.
-3. **Enforce HTTPS:** tick **Enforce HTTPS** once it's available.
-4. **Turn on private vulnerability reporting:** go to **Settings → Code security** (*Advanced Security* on some accounts) → **Private vulnerability reporting**.
+The site is plain static files, so it can be hosted in two ways. Cloudflare is recommended because it gives the app its own origin and real security headers.
 
-The site will be at `https://estuty.github.io/2FA-Keyring/`, with the app at `/app/`.
+### Cloudflare Workers (recommended): `https://2fa-keyring.estuty777.workers.dev`
 
-**Use a custom domain for real users.** All GitHub Pages project sites under `estuty.github.io` share one origin, and so one storage area. Serving the app from its own domain or subdomain (Settings → Pages → Custom domain) isolates each user's vault from any other site published from this account.
+`wrangler.jsonc` and `_headers` are already in the repository.
+
+1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Import a repository**.
+2. Connect GitHub and choose `estuty/2FA-Keyring`.
+3. Leave the build command empty, keep the deploy command `npx wrangler deploy`, and make sure the project name is `2fa-keyring`.
+4. Deploy. Every later push to `main` redeploys automatically.
+
+Cloudflare then sends the headers in `_headers` with every file:
+
+- **Content Security Policy:** the full policy, including `frame-ancestors 'none'`
+- **HSTS** (`Strict-Transport-Security`)
+- **`X-Frame-Options: DENY`** and **`X-Content-Type-Options: nosniff`**
+- **A Permissions-Policy** that turns off camera, microphone, location and similar features
+- **Cross-origin isolation headers** (`Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy`)
+
+The `2fa-keyring.` subdomain is used only by this app, so no other site shares its storage.
+
+You can also deploy from your computer with `npx wrangler deploy` in the repository folder.
+
+### GitHub Pages: `https://estuty.github.io/2FA-Keyring/`
+
+Settings → Pages → **Deploy from a branch**, with branch `main` and folder `/ (root)`. Tick **Enforce HTTPS**.
+
+- **No custom domain field:** leave the Custom domain field empty unless you own the domain and can add a DNS record for it. A `workers.dev` name can't be used there, because only Cloudflare controls its DNS.
+- **No security headers:** GitHub Pages can't send them, so the site relies on each page's `<meta>` policy and the app's own anti-framing check.
+- **Shared origin:** all GitHub Pages sites under `estuty.github.io` share one origin.
+
+### Private vulnerability reporting
+
+Turn it on under Settings → Code security, so the "Report a vulnerability" links work.
 
 ## Running locally
 
