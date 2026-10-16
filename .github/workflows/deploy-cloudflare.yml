@@ -66,19 +66,31 @@ jobs:
       - name: Verify the live site
         if: steps.creds.outputs.ok == 'true'
         run: |
-          sleep 10
-          headers=$(curl -sSfI "$SITE_URL/app/")
-          echo "$headers"
-          for h in content-security-policy strict-transport-security x-frame-options x-content-type-options referrer-policy permissions-policy; do
-            echo "$headers" | grep -qi "^$h:" || { echo "::error::Missing header: $h"; exit 1; }
-          done
-          echo "$headers" | grep -i "^content-security-policy:" | grep -q "frame-ancestors 'none'" || { echo "::error::CSP lacks frame-ancestors"; exit 1; }
-          for f in README.md SECURITY.md wrangler.jsonc _headers .assetsignore; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/$f")
-            [ "$code" = "404" ] || { echo "::error::$f is publicly served (HTTP $code)"; exit 1; }
+          # New files can take a little while to reach every Cloudflare location, so each check retries.
+          check() { # usage: check <description> <command...>
+            local desc="$1"; shift
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if "$@"; then echo "ok: $desc"; return 0; fi
+              sleep 10
+            done
+            echo "::error::$desc"; return 1
+          }
+          code() { curl -s -o /dev/null -w '%{http_code}' -H 'Cache-Control: no-cache' "$SITE_URL$1"; }
+          has_headers() {
+            local h; h=$(curl -sSI -H 'Cache-Control: no-cache' "$SITE_URL/app/") || return 1
+            for n in content-security-policy strict-transport-security x-frame-options x-content-type-options referrer-policy permissions-policy cross-origin-opener-policy; do
+              echo "$h" | grep -qi "^$n:" || return 1
+            done
+            echo "$h" | grep -i '^content-security-policy:' | grep -q "frame-ancestors 'none'"
+          }
+          fail=0
+          check "security headers present on /app/" has_headers || fail=1
+          for f in README.md SECURITY.md wrangler.jsonc _headers .assetsignore .github/workflows/deploy-cloudflare.yml; do
+            check "/$f is not served" test "$(code "/$f")" = 404 || fail=1
           done
           for p in / /app/ /security /privacy /terms; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -L "$SITE_URL$p")
-            [ "$code" = "200" ] || { echo "::error::$p returned HTTP $code"; exit 1; }
+            check "$p loads" test "$(code "$p")" = 200 || fail=1
           done
-          echo "Live site verified: security headers present, repository files not served, all pages load."
+          curl -sSI "$SITE_URL/app/"
+          [ "$fail" = 0 ] && echo "Live site verified: security headers present, repository files not served, all pages load."
+          exit $fail
