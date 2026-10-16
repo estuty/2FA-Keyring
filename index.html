@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="/assets/chrome.css">
 <script src="/assets/totp.js" defer></script>
 <script src="/assets/site.js" defer></script>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://2fa-keyring.com/#app","name":"2FA Keyring","url":"https://2fa-keyring.com/","description":"A free, open-source browser authenticator that generates TOTP two-factor codes and keeps keys encrypted on your device.","applicationCategory":"SecurityApplication","operatingSystem":"Any modern web browser","browserRequirements":"Requires JavaScript and the Web Crypto API","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","softwareVersion":"1.1.0"},{"@type":"SoftwareSourceCode","name":"2FA Keyring source code","codeRepository":"https://github.com/estuty/2FA-Keyring","programmingLanguage":"JavaScript","license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","targetProduct":{"@id":"https://2fa-keyring.com/#app"}},{"@type":"WebSite","name":"2FA Keyring","url":"https://2fa-keyring.com/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://2fa-keyring.com/#app","name":"2FA Keyring","url":"https://2fa-keyring.com/","description":"A free, open-source browser authenticator that generates TOTP two-factor codes and keeps keys encrypted on your device.","applicationCategory":"SecurityApplication","operatingSystem":"Any modern web browser","browserRequirements":"Requires JavaScript and the Web Crypto API","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","softwareVersion":"1.1.1"},{"@type":"SoftwareSourceCode","name":"2FA Keyring source code","codeRepository":"https://github.com/estuty/2FA-Keyring","programmingLanguage":"JavaScript","license":"https://github.com/estuty/2FA-Keyring/blob/main/LICENSE","targetProduct":{"@id":"https://2fa-keyring.com/#app"}},{"@type":"WebSite","name":"2FA Keyring","url":"https://2fa-keyring.com/"}]}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -53,7 +53,7 @@
           <a class="btn primary" href="/app/">Create your vault</a>
           <a class="btn" href="/app/#demo">Try a demo</a>
         </div>
-        <p class="works">The demo uses sample keys and saves nothing. Works with services that offer "authenticator app" codes (TOTP), such as Google, GitHub, Microsoft, AWS and Discord.</p>
+        <p class="works">The demo uses sample keys and saves nothing. Works with services that offer "authenticator app" codes (TOTP), such as Google, GitHub, AWS and Discord.</p>
       </div>
 
       <figure class="device" aria-label="Preview of the 2FA Keyring app">
@@ -153,7 +153,7 @@
         <a class="btn" href="/guides/google-authenticator/">Read the migration guide</a>
       </div>
       <ol class="mini">
-        <li><b>Export</b><span>In Google Authenticator, choose Transfer accounts, then Export accounts. It shows one or more QR codes.</span></li>
+        <li><b>Export</b><span>In Google Authenticator, open the menu and choose Transfer codes, then Export codes. It may show several QR codes.</span></li>
         <li><b>Scan</b><span>Take a picture of each code and choose the pictures in 2FA Keyring under Add key → Google Authenticator. Large exports split into several codes; the app tells you if one is missing.</span></li>
         <li><b>Review</b><span>See every account before anything is saved. Accounts already in your vault, and types the app doesn't support, are clearly marked and skipped.</span></li>
         <li><b>Check, then remove</b><span>Compare a few codes, or sign in once with each account, before you delete anything from your old app.</span></li>
@@ -308,7 +308,7 @@
   <div class="chrome-wrap">
     <div class="foot-about">
       <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
-      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+      <p class="build">Version <!--BUILD-->1.1.1 · preview build<!--/BUILD--></p>
     </div>
     <nav aria-label="Footer">
       <a href="/app/">App</a>
