@@ -94,3 +94,7 @@ Then open <http://localhost:8000/>. The app needs HTTPS or `localhost`, because 
 ## Verification
 
 `assets/totp.js` matches all 18 RFC 6238 test vectors (SHA-1, SHA-256 and SHA-512 at six timestamps). The website's live example uses the RFC's public test keys.
+
+## License
+
+[MIT](LICENSE) © 2026 estuty. Bundled third-party components keep their own licenses: jsQR (Apache-2.0, `assets/vendor/LICENSE-jsQR.txt`), Bricolage Grotesque and JetBrains Mono (SIL OFL 1.1, `assets/fonts/`).

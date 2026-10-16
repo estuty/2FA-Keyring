@@ -85,7 +85,7 @@ jobs:
           }
           fail=0
           check "security headers present on /app/" has_headers || fail=1
-          for f in README.md SECURITY.md wrangler.jsonc _headers .assetsignore .github/workflows/deploy-cloudflare.yml; do
+          for f in README.md SECURITY.md LICENSE wrangler.jsonc _headers .assetsignore .github/workflows/deploy-cloudflare.yml; do
             check "/$f is not served" test "$(code "/$f")" = 404 || fail=1
           done
           check "security.txt is published" test "$(code /.well-known/security.txt)" = 200 || fail=1
