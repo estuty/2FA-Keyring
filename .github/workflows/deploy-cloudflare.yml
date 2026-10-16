@@ -89,14 +89,15 @@ jobs:
             check "/$f is not served" test "$(code "/$f")" = 404 || fail=1
           done
           check "security.txt is published" test "$(code /.well-known/security.txt)" = 200 || fail=1
-          www=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' https://www.2fa-keyring.com/app/)
+          www=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' https://www.2fa-keyring.com/app/ || true)
           case "$www" in
             30[1278]" https://2fa-keyring.com/"*) echo "ok: www redirects to 2fa-keyring.com" ;;
+            000*) echo "ok: www.2fa-keyring.com isn't reachable, so it can't serve a separate copy" ;;
             *) echo "::warning::www.2fa-keyring.com does not redirect to https://2fa-keyring.com (got: $www). It serves a separate copy with its own vault." ;;
           esac
           for p in / /app/ /security /privacy /terms; do
             check "$p loads" test "$(code "$p")" = 200 || fail=1
           done
-          curl -sSI "$SITE_URL/app/"
+          curl -sSI "$SITE_URL/app/" || true
           [ "$fail" = 0 ] && echo "Live site verified: security headers present, repository files not served, all pages load."
           exit $fail
