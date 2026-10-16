@@ -164,7 +164,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 /* dialogs */
 dialog{
   border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;
-  width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;
+  width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;
 }
 dialog::backdrop{background:rgba(8,12,18,.55)}
 .dlg{display:grid;gap:16px;padding:20px}
@@ -184,6 +184,15 @@ dialog::backdrop{background:rgba(8,12,18,.55)}
 details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
 details[open] summary{margin-bottom:10px}
 .prev{font:13px/1.4 var(--font-code);color:var(--ok);overflow-wrap:anywhere}
+.entries{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.entry{display:grid;gap:12px;min-width:0}
+.entry+.entry{padding-top:14px;border-top:1px solid var(--line)}
+.entry-head{display:flex;justify-content:space-between;align-items:center;margin-block:-6px}
+.entry-no{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.entry-grid{grid-template-columns:minmax(0,1fr)}}
+.addmore{justify-self:start}
+.prev.bad{color:var(--danger)}
 .secret-reveal{font:14px/1.4 var(--font-code);letter-spacing:.04em;overflow-wrap:anywhere;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field)}
 .delbox{display:grid;gap:10px;padding:12px;border:1px solid var(--danger);border-radius:8px}
 .backup-text{font:12px/1.35 var(--font-code);min-height:110px}
@@ -287,7 +296,7 @@ details[open] summary{margin-bottom:10px}
   <ul id="list" class="list"></ul>
   <section id="empty" class="empty" hidden>
     <h2>No keys yet</h2>
-    <p>Add a service with its setup key (the text code shown beside the QR code) or paste an otpauth:// link. A QR screenshot works too.</p>
+    <p>Add as many services as you like, several at a time. Each needs its setup key (the text code shown beside the QR code), an otpauth:// link, or a QR screenshot.</p>
     <div class="btns">
       <button class="btn primary" id="emptyAdd" type="button">Add your first key</button>
       <button class="btn" id="emptyDemo" type="button">Try an example key</button>
@@ -299,30 +308,20 @@ details[open] summary{margin-bottom:10px}
 
 <dialog id="addDlg" aria-labelledby="addTitle">
   <div class="dlg">
-    <div class="dlg-head"><h2 id="addTitle">Add a key</h2><button class="icon" id="addClose" type="button" aria-label="Close">×</button></div>
+    <div class="dlg-head"><h2 id="addTitle">Add keys</h2><button class="icon" id="addClose" type="button" aria-label="Close">×</button></div>
     <div class="tabs" role="tablist">
-      <button role="tab" id="tabKey" type="button" aria-selected="true" aria-controls="keyForm">Setup key</button>
-      <button role="tab" id="tabLink" type="button" aria-selected="false" aria-controls="linkForm">Link or QR image</button>
+      <button role="tab" id="tabKey" type="button" aria-selected="true" aria-controls="keyForm">Setup keys</button>
+      <button role="tab" id="tabLink" type="button" aria-selected="false" aria-controls="linkForm">Links or QR images</button>
     </div>
     <form id="keyForm" role="tabpanel" aria-labelledby="tabKey" autocomplete="off">
-      <div class="field"><label for="fIssuer">Service</label><input id="fIssuer" maxlength="80" placeholder="GitHub"></div>
-      <div class="field"><label for="fLabel">Account</label><input id="fLabel" maxlength="120" placeholder="you@example.com"></div>
-      <div class="field"><label for="fSecret">Setup key</label><input id="fSecret" class="mono-in" spellcheck="false" autocapitalize="off" placeholder="JBSW Y3DP EHPK 3PXP" required></div>
-      <p class="prev" id="prev" hidden></p>
-      <details>
-        <summary>Advanced</summary>
-        <div class="row2">
-          <div class="field"><label for="fAlgo">Algorithm</label><select id="fAlgo"><option>SHA1</option><option>SHA256</option><option>SHA512</option></select></div>
-          <div class="field"><label for="fDigits">Digits</label><select id="fDigits"><option>6</option><option>7</option><option>8</option></select></div>
-          <div class="field"><label for="fPeriod">Seconds</label><input id="fPeriod" type="number" min="1" max="300" value="30" inputmode="numeric"></div>
-        </div>
-      </details>
+      <ol id="entries" class="entries"></ol>
+      <button class="linkbtn addmore" id="addEntry" type="button">+ Add another key</button>
       <p class="err" id="keyErr" role="alert"></p>
-      <div class="btns"><button class="btn primary" type="submit">Add key</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
+      <div class="btns"><button class="btn primary" id="keySubmit" type="submit">Save key</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
     </form>
     <form id="linkForm" role="tabpanel" aria-labelledby="tabLink" hidden autocomplete="off">
       <div class="field"><label for="lLinks">otpauth:// links, one per line</label><textarea id="lLinks" rows="4" class="mono-in" spellcheck="false" placeholder="otpauth://totp/GitHub:you@example.com?secret=...&amp;issuer=GitHub"></textarea></div>
-      <div class="field"><label for="lFile">Or choose a screenshot of the QR code</label><input id="lFile" type="file" accept="image/*"></div>
+      <div class="field"><label for="lFile">Or choose QR code screenshots (you can pick several)</label><input id="lFile" type="file" accept="image/*" multiple></div>
       <p class="err" id="linkErr" role="alert"></p>
       <div class="btns"><button class="btn primary" type="submit">Add</button><button class="btn" type="button" data-close="addDlg">Cancel</button></div>
     </form>
@@ -722,7 +721,8 @@ function parseOtpauth(uri) {
     keyCache.clear(); rows.clear();
     $("#list").replaceChildren();
     document.querySelectorAll("dialog").forEach(function (d) { if (d.open) d.close(); });
-    ["#fSecret", "#eSecret", "#bText", "#iText", "#iPass", "#sNew", "#sNew2"].forEach(function (s) {
+    $("#entries").replaceChildren();
+    ["#lLinks", "#eSecret", "#bText", "#iText", "#iPass", "#sNew", "#sNew2"].forEach(function (s) {
       var el = $(s); if (!el) return;
       if ("value" in el) el.value = ""; else el.textContent = "";
     });
@@ -909,26 +909,33 @@ function parseOtpauth(uri) {
     }
   }
 
-  var prevSig = "", prevKey = null;
-  async function previewTick(now) {
-    var out = $("#prev");
-    var secret = normSecret($("#fSecret").value);
-    if (secret.length < 8) { out.hidden = true; return; }
+  async function previewEntry(li, now) {
+    var out = fld(li, ".prev");
+    var raw = fld(li, ".k-secret").value;
+    var secret = normSecret(raw);
+    if (/^otpauth/i.test(raw.trim()) || secret.length < 8) { out.hidden = true; return; }
+    var algo = fld(li, ".k-algo").value;
+    var c = prevCache.get(li);
     try {
-      var sig = secret + $("#fAlgo").value;
-      if (prevSig !== sig) { prevKey = await hmacKey(base32Decode(secret), $("#fAlgo").value); prevSig = sig; }
+      if (!c || c.sig !== secret + algo) {
+        c = { sig: secret + algo, key: await hmacKey(base32Decode(secret), algo) };
+        prevCache.set(li, c);
+      }
     } catch (e) {
-      prevSig = "";
+      prevCache.delete(li);
       out.textContent = "The setup key has characters outside A to Z and 2 to 7.";
-      out.style.color = "var(--danger)";
+      out.classList.add("bad");
       out.hidden = false;
       return;
     }
-    var period = Math.max(1, Math.min(300, parseInt($("#fPeriod").value, 10) || 30));
-    var code = await hotpFromKey(prevKey, Math.floor(now / 1000 / period), Number($("#fDigits").value));
-    out.style.color = "";
+    var period = Math.max(1, Math.min(300, parseInt(fld(li, ".k-period").value, 10) || 30));
+    var code = await hotpFromKey(c.key, Math.floor(now / 1000 / period), Number(fld(li, ".k-digits").value));
+    out.classList.remove("bad");
     out.textContent = "Code right now: " + groupCode(code) + ". It should match the service's own app.";
     out.hidden = false;
+  }
+  async function previewTick(now) {
+    await Promise.all(entries().map(function (li) { return previewEntry(li, now); }));
   }
 
   var ticking = false;
@@ -965,37 +972,142 @@ function parseOtpauth(uri) {
   $("#tabKey").addEventListener("click", function () { setTab("key"); });
   $("#tabLink").addEventListener("click", function () { setTab("link"); });
 
+  var entrySeq = 0, prevCache = new WeakMap();
+  function entries() { return Array.prototype.slice.call($("#entries").children); }
+  function fld(li, c) { return li.querySelector(c); }
+  function isBlank(li) {
+    return !fld(li, ".k-issuer").value.trim() && !fld(li, ".k-label").value.trim() && !fld(li, ".k-secret").value.trim();
+  }
+  function buildEntry() {
+    var n = ++entrySeq;
+    var id = function (s) { return "k" + n + s; };
+    var li = document.createElement("li");
+    li.className = "entry";
+    li.innerHTML =
+      '<div class="entry-head"><span class="entry-no"></span><button class="icon rm" type="button">×</button></div>' +
+      '<div class="entry-grid">' +
+        '<div class="field"><label for="' + id("i") + '">Service</label><input id="' + id("i") + '" class="k-issuer" maxlength="80" placeholder="GitHub"></div>' +
+        '<div class="field"><label for="' + id("l") + '">Account</label><input id="' + id("l") + '" class="k-label" maxlength="120" placeholder="you@example.com"></div>' +
+      '</div>' +
+      '<div class="field"><label for="' + id("s") + '">Setup key</label><input id="' + id("s") + '" class="k-secret mono-in" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="JBSW Y3DP EHPK 3PXP or an otpauth:// link"></div>' +
+      '<p class="prev" hidden></p>' +
+      '<details><summary>Advanced</summary><div class="row2">' +
+        '<div class="field"><label for="' + id("a") + '">Algorithm</label><select id="' + id("a") + '" class="k-algo"><option>SHA1</option><option>SHA256</option><option>SHA512</option></select></div>' +
+        '<div class="field"><label for="' + id("d") + '">Digits</label><select id="' + id("d") + '" class="k-digits"><option>6</option><option>7</option><option>8</option></select></div>' +
+        '<div class="field"><label for="' + id("p") + '">Seconds</label><input id="' + id("p") + '" class="k-period" type="number" min="1" max="300" value="30" inputmode="numeric"></div>' +
+      '</div></details>' +
+      '<p class="err entry-err" role="alert"></p>';
+    fld(li, ".rm").addEventListener("click", function () { removeEntry(li); });
+    fld(li, ".k-secret").addEventListener("input", function () {
+      fld(li, ".entry-err").textContent = "";
+      fillFromLink(li);
+      previewEntry(li, Date.now());
+    });
+    [".k-algo", ".k-digits", ".k-period"].forEach(function (c) {
+      fld(li, c).addEventListener("input", function () { previewEntry(li, Date.now()); });
+    });
+    li.addEventListener("input", updateEntryUi);
+    return li;
+  }
+  function updateEntryUi() {
+    var list = entries(), many = list.length > 1;
+    list.forEach(function (li, i) {
+      fld(li, ".entry-head").hidden = !many;
+      fld(li, ".entry-no").textContent = "Key " + (i + 1);
+      fld(li, ".rm").setAttribute("aria-label", "Remove key " + (i + 1));
+    });
+    var filled = list.filter(function (li) { return !isBlank(li); }).length;
+    $("#keySubmit").textContent = filled > 1 ? "Save " + filled + " keys" : "Save key";
+  }
+  function addEntry() {
+    var li = buildEntry();
+    $("#entries").append(li);
+    updateEntryUi();
+    fld(li, ".k-issuer").focus();
+  }
+  function removeEntry(li) {
+    var list = entries();
+    var i = list.indexOf(li);
+    li.remove();
+    if (!entries().length) $("#entries").append(buildEntry());
+    updateEntryUi();
+    var rest = entries();
+    fld(rest[Math.min(i, rest.length - 1)], ".k-issuer").focus();
+  }
+  function resetEntries() {
+    $("#entries").replaceChildren(buildEntry());
+    updateEntryUi();
+  }
+  function fillFromLink(li) {
+    var inp = fld(li, ".k-secret"), raw = inp.value.trim();
+    if (!/^otpauth(-migration)?:\/\//i.test(raw)) return;
+    try {
+      var p = parseOtpauth(raw);
+      inp.value = normSecret(p.secret);
+      if (!fld(li, ".k-issuer").value.trim()) fld(li, ".k-issuer").value = p.issuer;
+      if (!fld(li, ".k-label").value.trim()) fld(li, ".k-label").value = p.label;
+      var algo = String(p.algo).toUpperCase(), digits = String(p.digits), period = String(parseInt(p.period, 10) || 30);
+      if (ALGS[algo]) fld(li, ".k-algo").value = algo;
+      if (["6", "7", "8"].indexOf(digits) >= 0) fld(li, ".k-digits").value = digits;
+      fld(li, ".k-period").value = period;
+      if (algo !== "SHA1" || digits !== "6" || period !== "30") fld(li, "details").open = true;
+    } catch (x) {
+      fld(li, ".entry-err").textContent = x.user ? x.message : "That link couldn't be read.";
+    }
+  }
+
   function openAdd() {
-    $("#keyForm").reset(); $("#linkForm").reset();
+    $("#linkForm").reset();
     $("#keyErr").textContent = ""; $("#linkErr").textContent = "";
-    $("#prev").hidden = true; prevSig = "";
+    resetEntries();
     setTab("key");
     openDlg($("#addDlg"));
+    setTimeout(function () { var f = $("#entries .k-issuer"); if (f) f.focus(); }, 0);
   }
   $("#btnAdd").addEventListener("click", openAdd);
   $("#emptyAdd").addEventListener("click", openAdd);
   $("#addClose").addEventListener("click", function () { $("#addDlg").close(); });
-  ["#fSecret", "#fAlgo", "#fDigits", "#fPeriod"].forEach(function (s) {
-    $(s).addEventListener("input", function () { previewTick(Date.now()); });
-  });
+  $("#addEntry").addEventListener("click", addEntry);
 
   $("#keyForm").addEventListener("submit", async function (ev) {
     ev.preventDefault();
-    $("#keyErr").textContent = "";
-    try {
-      var a = makeAccount({
-        issuer: $("#fIssuer").value, label: $("#fLabel").value, secret: $("#fSecret").value,
-        algo: $("#fAlgo").value, digits: $("#fDigits").value, period: $("#fPeriod").value
-      });
-      if (isDup(a)) throw uerr("That key is already in your vault.");
-      S.accounts.push(a);
-      await persist();
-      render();
-      $("#addDlg").close();
-      toast("Added " + nameOf(a));
-    } catch (e) {
-      $("#keyErr").textContent = e.user ? e.message : "Couldn't add that key.";
+    var err = $("#keyErr");
+    err.textContent = "";
+    var list = entries(), batch = [], firstBad = null;
+    list.forEach(function (li) {
+      var e = fld(li, ".entry-err");
+      e.textContent = "";
+      if (isBlank(li)) return;
+      try {
+        var raw = fld(li, ".k-secret").value.trim();
+        if (/^otpauth/i.test(raw)) parseOtpauth(raw);
+        var a = makeAccount({
+          issuer: fld(li, ".k-issuer").value, label: fld(li, ".k-label").value, secret: raw,
+          algo: fld(li, ".k-algo").value, digits: fld(li, ".k-digits").value, period: fld(li, ".k-period").value
+        });
+        if (isDup(a)) throw uerr("This key is already in your vault.");
+        var twice = batch.some(function (b) {
+          return b.secret === a.secret && b.algo === a.algo && b.digits === a.digits && b.period === a.period;
+        });
+        if (twice) throw uerr("This key is entered twice above.");
+        batch.push(a);
+      } catch (x) {
+        e.textContent = x.user ? x.message : "This key couldn't be read.";
+        if (!firstBad) firstBad = li;
+      }
+    });
+    if (firstBad) {
+      var n = list.filter(function (li) { return fld(li, ".entry-err").textContent; }).length;
+      err.textContent = (n === 1 ? "Fix the key marked above." : "Fix the " + n + " keys marked above.") + " Nothing has been saved yet.";
+      fld(firstBad, ".k-secret").focus();
+      return;
     }
+    if (!batch.length) { err.textContent = "Enter a setup key to save."; return; }
+    Array.prototype.push.apply(S.accounts, batch);
+    await persist();
+    render();
+    $("#addDlg").close();
+    toast(batch.length === 1 ? "Added " + nameOf(batch[0]) : "Added " + batch.length + " keys");
   });
 
   $("#linkForm").addEventListener("submit", async function (ev) {
@@ -1041,17 +1153,21 @@ function parseOtpauth(uri) {
     });
   }
   $("#lFile").addEventListener("change", async function (ev) {
-    var f = ev.target.files[0];
-    if (!f) return;
-    $("#linkErr").textContent = "";
-    try {
-      var txt = await decodeQr(f);
-      var ta = $("#lLinks");
-      ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + txt;
-    } catch (e) {
-      $("#linkErr").textContent = e.user ? e.message : "No QR code found in that image.";
-    }
+    var files = Array.prototype.slice.call(ev.target.files || []);
     ev.target.value = "";
+    if (!files.length) return;
+    var err = $("#linkErr");
+    err.textContent = "";
+    if (typeof jsQR !== "function") { err.textContent = "QR reading isn't available here. Paste the otpauth:// links instead."; return; }
+    var found = [], missed = [];
+    for (var i = 0; i < files.length; i++) {
+      try { found.push(await decodeQr(files[i])); } catch (e) { missed.push(files[i].name); }
+    }
+    if (found.length) {
+      var ta = $("#lLinks");
+      ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + found.join("\n");
+    }
+    if (missed.length) err.textContent = "No QR code found in " + missed.join(", ") + ". Try a sharper, closer screenshot.";
   });
 
   $("#emptyDemo").addEventListener("click", async function () {

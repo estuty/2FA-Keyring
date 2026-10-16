@@ -4,7 +4,7 @@ A single-page web app for managing several two-factor (TOTP) keys. It shows a li
 
 ## Features
 
-- **Add keys three ways:** type the setup key, paste one or more `otpauth://` links, or upload a screenshot of the QR code.
+- **Add several keys at once:** fill in as many setup keys as you like in one form (pasting an `otpauth://` link into a setup-key field fills in the rest), paste a list of `otpauth://` links, or pick several QR code screenshots.
 - **Live codes:** click a code to copy it. The next code appears a few seconds before the current one expires.
 - **Supported formats:** SHA-1, SHA-256 and SHA-512, with 6, 7 or 8 digits and any period from 1 to 300 seconds.
 - **Manage keys:** search, rename, reveal a key's setup key, or delete it.
