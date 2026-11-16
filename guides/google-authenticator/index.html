@@ -69,17 +69,17 @@
       <h2 id="export">1. Export from Google Authenticator</h2>
       <ol>
         <li>On your phone, open Google Authenticator.</li>
-        <li>Open the menu and choose <b>Transfer accounts</b>, then <b>Export accounts</b>. You may be asked to confirm it's you.</li>
-        <li>Select the accounts to move and continue. The app shows one QR code, or several if you have many accounts (for example "1 of 3").</li>
+        <li>Open the menu and choose <b>Transfer codes</b>, then <b>Export codes</b>. Unlock your phone when asked.</li>
+        <li>Select the accounts to move and tap <b>Next</b>. If you selected more than one account, the app may show several QR codes.</li>
       </ol>
-      <p>Menu names can differ between app versions. If yours looks different, follow <a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google's own instructions</a>.</p>
+      <p>These are the menu names in <a href="https://support.google.com/accounts/answer/1066447" rel="noopener noreferrer">Google's instructions</a> (checked 16 October 2026). Older app versions may say "Transfer accounts" and "Export accounts".</p>
 
       <h2 id="pictures">2. Get pictures of the codes</h2>
       <p>2FA Keyring reads QR codes from images, so you need a picture of each export code:</p>
       <ul>
         <li><b>Using 2FA Keyring on a computer:</b> take a photo of the phone screen with another phone or camera, then move the photos to the computer privately (for example with a cable).</li>
         <li><b>Using 2FA Keyring on a second phone:</b> in the import screen, the picture button usually lets you take a photo directly.</li>
-        <li><b>Screenshots:</b> some phones don't allow screenshots of the export screen. If a screenshot comes out blank, take a photo instead.</li>
+        <li><b>Screenshots:</b> if a screenshot of the export screen comes out blank or is blocked, take a photo instead.</li>
       </ul>
       <p>For a multi-code export, get a picture of every code. Keep the pictures sharp and close: the code should fill most of the frame.</p>
 
@@ -107,6 +107,10 @@
         <li>Make a backup of your vault and check that it opens. See the <a href="/guides/backup-and-restore/">backup guide</a>.</li>
         <li>Only then remove the accounts from Google Authenticator, if you want to. Delete the export pictures.</li>
       </ol>
+      <div class="callout warn">
+        <b>If Google Authenticator syncs to your Google Account</b>
+        <p>Google says deleting a code on one device also deletes it on your other synced devices. Remove codes only once you're sure 2FA Keyring works for each account.</p>
+      </div>
 
       <h2 id="problems">If something goes wrong</h2>
       <ul>
@@ -123,7 +127,7 @@
   <div class="chrome-wrap">
     <div class="foot-about">
       <p><b>2FA Keyring</b> · Free and open source (MIT). No accounts, cookies or analytics.</p>
-      <p class="build">Version <!--BUILD-->1.1.0 · preview build<!--/BUILD--></p>
+      <p class="build">Version <!--BUILD-->1.1.1 · preview build<!--/BUILD--></p>
     </div>
     <nav aria-label="Footer">
       <a href="/app/">App</a>

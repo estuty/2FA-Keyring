@@ -2,7 +2,14 @@
 
 All notable changes to 2FA Keyring. Versions follow [semantic versioning](https://semver.org/). The site footer shows the exact version and commit that is deployed.
 
-## 1.1.0 (unreleased)
+## 1.1.1 (2026-10-16)
+
+### Changed
+- Service setup guide checked against Google, GitHub, Microsoft, AWS and Discord's official documentation, with exact menu names and a source link for each. AWS's two consecutive codes, GitHub's 28-day check-up and Google's 2-Step Verification requirement are now stated. Microsoft's page doesn't describe adding a third-party app, and the guide now says so.
+- Google Authenticator export steps use Google's current menu names (Transfer codes → Export codes). Added a warning that deleting a synced code removes it from every device.
+- Home page no longer lists Microsoft among confirmed services until that can be verified.
+
+## 1.1.0 (2026-10-16)
 
 ### Added
 - **Demo mode** (`/app/#demo`): a sample vault of clearly labelled public test keys, kept in memory only. It never reads or writes a saved vault.

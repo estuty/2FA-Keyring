@@ -312,3 +312,4 @@ td code{font-size:.85em}
 .prose kbd{font-family:var(--font-code);font-size:.85em;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface)}
 .prose ol ol,.prose ol ul{margin-top:8px}
 .doc-hero .btns{margin-top:20px}
+.prose .src{font-size:14px;color:var(--muted);margin-top:-6px}
